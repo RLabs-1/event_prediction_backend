@@ -1,0 +1,32 @@
+# Environment Files
+/bin/
+/include/
+/lib/
+.env
+pyvenv.cfg
+
+
+#Compiled Files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+#Database
+*.sqlite3
+
+
+#Log files
+*.log
+*.tmp
+
+
+#IDE files
+.idea/
+*.iml
+*.vscode/
+
+#Tokens
+myToken.txt
+
+
