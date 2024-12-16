@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'user_management',
 ]
 
 MIDDLEWARE = [
@@ -76,9 +77,9 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db',
-        'USER': 'husamshweiki',
-        'PASSWORD': '',
+        'NAME': 'event_prediction',
+        'USER': 'postgres',
+        'PASSWORD': 'haya315202903',
         'HOST': 'localhost',
         'PORT': '5432',
     }
