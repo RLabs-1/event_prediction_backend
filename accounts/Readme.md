@@ -1,27 +1,26 @@
-README for the **`accounts`** app,
+````README for the **`accounts`** app,
 specifically for the **email verification** feature:
 ---
 
 # Accounts App - Email Verification
 
-This section of the **`accounts`** app handles email verification functionality. It is responsible for sending verification emails to users when they register and verifying their email when they click the verification link.
+This section of the **`accounts`** app handles the email verification functionality. It is responsible for sending verification emails to users when they register and verifying their email when they submit the verification code.
 
 ## Features
 
-- **Send Email Verification**: Sends an email to the user with a unique verification link.
-- **Verify Email**: Allows the user to verify their email address by clicking on the link in the email.
+- **Send Email Verification**: Sends an email to the user with a unique verification link after registration.
+- **Verify Email**: Allows the user to verify their email address by submitting a verification code through a POST request.
 
 ## How It Works
 
 ### 1. **Sending Verification Emails**
-   - When a user registers or when you want to trigger email verification manually, the `send_verification_email()` function is called.
-   - This function creates a signed token for the user's email and generates a verification link.
-   - The link is then sent via email to the user's provided email address.
+   - When a user registers, the `send_verification_email()` function is called automatically.
+   - This function generates a signed token for the user's email and creates a verification link.
+   - The link is then sent to the user's provided email address.
 
 ### 2. **Verifying Email**
-   - The user receives an email with a verification link that includes a token.
-   - When the user clicks the link, the `verify_email()` view is triggered.
-   - The token is unsign to retrieve the email address, and the user’s status is updated to "active," confirming their email address.
+   - The user submits the email and verification code (received in the email).
+   - The **`verify_email()`** endpoint is called to verify the code and activate the user's account.
 
 ## Code Details
 
@@ -31,46 +30,53 @@ This section of the **`accounts`** app handles email verification functionality.
    Sends a verification email to the user.
 
    - **Arguments**:
-     - `user`: The `User` object to which the verification email is to be sent.
+     - `user`: The `User` object to which the verification email will be sent.
    - **Process**:
-     1. Generates a signed token for the user’s email using the `Signer` class.
+     1. Generates a signed token for the user’s email using Django’s `Signer` class.
      2. Creates a verification URL with the signed token.
-     3. Sends the email with the verification link to the user.
+     3. Sends the email containing the verification link to the user.
 
    - **Usage**:
-     Call this function after creating a user or when you need to trigger email verification manually.
+     You can call this function after creating a user or whenever you need to trigger email verification manually.
 
-#### `verify_email(request)`
-   Handles the verification process when the user clicks the email verification link.
+#### `verify_email_code(email, verification_code)`
+   Verifies the email address by checking the provided verification code.
 
    - **Arguments**:
-     - `request`: The HTTP request containing the signed token as a query parameter (`token`).
+     - `email`: The email of the user whose verification code is being checked.
+     - `verification_code`: The code the user receives to verify their email address.
    - **Process**:
-     1. Extracts the token from the query parameters.
-     2. Unsings the token to retrieve the user's email.
-     3. If the email exists, updates the user's account to be active (`user.is_active = True`).
-     4. If the token is invalid or expired, an error message is shown.
+     1. Unsigned the verification code.
+     2. Checks if the email matches.
+     3. If valid, activates the user's account.
+   
+   - **Returns**: A success message if verification is successful, or raises an error if the code is invalid.
 
-   - **URL**:
-     The URL for email verification is defined in `accounts/urls.py` as:
-     ```
-     /accounts/verify-email/?token=<signed_token>
-     ```
+### Endpoints
 
-## How to Use
-
-1. **Triggering Email Verification**:
-   - When a user registers, you can call the `send_verification_email()` function like so:
-     ```python
-     from accounts.views import send_verification_email
-     from django.contrib.auth.models import User
-
-     user = User.objects.create_user(username='newuser', email='newuser@example.com', password='password123')
-     send_verification_email(user)
-     ```
-
-2. **Verifying Email**:
-   - After the user clicks the verification link in the email, the `verify_email()` view will be called automatically by the URL configured in `accounts/urls.py`.
+#### **POST** `/api/user/verifyEmail/`
+   - **Purpose**: Verifies a user's email address using the provided email and verification code.
+   - **Request**:
+     - **Body**:
+       ```json
+       {
+         "email": "user@example.com",
+         "verification_code": "verification_token"
+       }
+       ```
+   - **Response**:
+     - Success (200):
+       ```json
+       {
+         "message": "Email successfully verified!"
+       }
+       ```
+     - Error (400):
+       ```json
+       {
+         "error": "Invalid verification code or email mismatch."
+       }
+       ```
 
 ### URL Configuration
 
@@ -78,14 +84,15 @@ In **`accounts/urls.py`**, you should define the URL for email verification:
 
 ```python
 from django.urls import path
-from .views import verify_email
+from .views import verify_email, verify_email_token_view
 
 urlpatterns = [
     path('verify-email/', verify_email, name='verify_email'),
+    path('verify-email-token/', verify_email_token_view, name='verify_email_token'),
 ]
 ```
 
-Make sure this is included in the root `urls.py`:
+Make sure this is included in your root `urls.py`:
 
 ```python
 from django.urls import path, include
@@ -95,10 +102,35 @@ urlpatterns = [
 ]
 ```
 
-## Configuration
+## How to Use
 
-1. **Email Backend**: Ensure that you have an email backend configured in your `settings.py` for sending emails. For development, you can use the console email backend to print emails in the terminal.
+1. **Triggering Email Verification**:
+   - When a user registers, you can call the `send_verification_email()` function as follows:
+     ```python
+     from accounts.views import send_verification_email
+     from django.contrib.auth.models import User
 
+     user = User.objects.create_user(username='newuser', email='newuser@example.com', password='password123')
+     send_verification_email(user)
+     ```
+
+2. **Verifying Email**:
+   - The user submits the email and verification code using the following API call:
+     ```bash
+     POST /api/user/verifyEmail/ HTTP/1.1
+     Content-Type: application/json
+
+     {
+       "email": "newuser@example.com",
+       "verification_code": "signed_verification_token"
+     }
+     ```
+   - The response will indicate whether the email verification was successful.
+
+### Configuration
+
+1. **Email Backend**: Ensure that you have an email backend configured in your `settings.py` for sending emails. For development, you can use the console email backend to print emails in the terminal:
+   
    ```python
    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development mode
    DEFAULT_FROM_EMAIL = 'your-email@example.com'  # Replace with your email
@@ -134,7 +166,7 @@ urlpatterns = [
 ## Important Notes
 
 - **Don't forget to review email configurations when deploying to production!**
-   - Make sure you configure your SMTP settings for sending emails in production.
+   - Make sure to configure your SMTP settings for sending emails in production.
    - You might want to use an email service like **SendGrid**, **Mailgun**, or **Amazon SES** for reliable email delivery.
 
 - **Security**: The signed tokens used in the email verification link provide a way to ensure the link is valid. Make sure to configure your Django app to handle token expiration if needed.

@@ -1,11 +1,15 @@
-# utils.py
-from django.core.mail import send_mail
-from django.core.signing import Signer, BadSignature
-from django.conf import settings
-from django.contrib.auth.models import User
+# accounts/utils.py
 
-# The signer is used to create and verify signed tokens for email verification
+from django.core.mail import send_mail
+from django.conf import settings
+from django.core.signing import BadSignature
+from django.contrib.auth.models import User
+from django.core.signing import Signer
+
 signer = Signer()
+"""The Signer class in Django is part of the django.core.signing module, and it is used to create "signed" data. This 
+means that the data is securely encoded with a cryptographic signature that can later be verified to ensure its 
+integrity and authenticity """
 
 
 def send_verification_email(user):
@@ -30,32 +34,37 @@ def send_verification_email(user):
     )
 
 
-def verify_email_token(token):
+def verify_email_token(verification_code, email):
     """
     Verifies the email verification token.
 
     Arguments:
-    token -- the signed token received from the verification link.
+    verification_code -- The code provided by the user to verify the email.
+    email -- The user's email address.
 
     Returns:
     A tuple (success, message), where:
-    - success: True if the token is valid, False if it's not.
+    - success: True if the code matches, False if it's invalid or expired.
     - message: A success or error message.
     """
     try:
-        # Unsigned the token to retrieve the user's email
-        email = signer.unsign(token)
+        # Unsigned the verification code (token) to retrieve the user's email
+        unsiged_email = signer.unsign(verification_code)
+
+        # Check if the email matches
+        if unsiged_email != email:
+            return False, "Invalid verification code or email mismatch."
 
         # Retrieve the user associated with the email
         user = User.objects.get(email=email)
 
-        # Activate the user account (set is_active to True)
+        # Activate the user account
         user.is_active = True
         user.save()
 
-        # Return a success message
         return True, "Email successfully verified!"
 
-    except (BadSignature, User.DoesNotExist):
-        # Return an error message if the token is invalid or user does not exist
-        return False, "Invalid or expired verification link."
+    except BadSignature:
+        return False, "Invalid or expired verification code."
+    except User.DoesNotExist:
+        return False, "User not found."
