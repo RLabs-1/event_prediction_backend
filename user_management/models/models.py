@@ -2,6 +2,9 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 
 class User(AbstractBaseUser):
+    """
+    Base User Model
+    """
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
