@@ -17,6 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from user_management.views.views import UserDeactivateView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/user/<int:userId>/deactivate', UserDeactivateView.as_view(), name='deactivate-user'),
 ]
