@@ -1,5 +1,0 @@
-django>=5.0
-django-rest-framework
-drf-spectacular
-
-
