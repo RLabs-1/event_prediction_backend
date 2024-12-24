@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user_management',
+    'drf_spectacular',  # Add Spectacular for Open api
 ]
 
 MIDDLEWARE = [
@@ -74,15 +75,16 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction',
+        'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': 'haya315202903',
+        'PASSWORD': '147258magd',
         'HOST': 'localhost',
-        'PORT': '5432',
-    }
+        'PORT':'5432',
+}
 }
 
 
@@ -126,3 +128,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Use Spectacular
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Log Prediction API',
+    'DESCRIPTION': 'API documentation for Log Prediction',
+    'VERSION': '1.0.0',
+}
