@@ -12,7 +12,7 @@ class UserService:
             if not user.is_active:
                 user.is_active = True
                 user.save()
-                return {"message": f"User {user.email} activated successfully."}
+                return {"message": f"User {user_id} activated successfully."}
             return {"message": "User is already active."}
         except ObjectDoesNotExist:
             return {"message": "User not found!."}
