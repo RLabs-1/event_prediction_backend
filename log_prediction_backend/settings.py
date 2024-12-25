@@ -77,9 +77,9 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction',
-        'USER': 'postgres',
-        'PASSWORD': 'haya315202903',
+        'NAME': 'event_prediction_db',
+        'USER': 'husamshweiki',
+        'PASSWORD': 'Raneem#newproject94',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -126,3 +126,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+#We will be using Gmail SMTP to send emails in Django
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'eventprediction.backend@gmail.com'  #A new Gmail accoun that I created in order to send Emails to the register.
+EMAIL_HOST_PASSWORD = 'ledz sibu oocn lcwo'   #The unique host password I got for my Gmail account.
+
