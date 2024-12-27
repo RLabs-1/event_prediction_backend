@@ -20,6 +20,8 @@ from user_management.views.views import ActivateUserView
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
+from user_management.views.views import UserLoginView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +29,9 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),  # redoc UI
+    path('api/user/login', UserLoginView.as_view(), name='user-login'),
+
+
 ]
 
 

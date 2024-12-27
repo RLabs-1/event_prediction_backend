@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user_management',
+    'rest_framework',
     'drf_spectacular',  # Add Spectacular for Open api
+
 ]
 
 MIDDLEWARE = [
@@ -129,8 +131,13 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Use Spectacular
 REST_FRAMEWORK = {
+     #Authentication classes
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+
+    # Schema generation for API documentation
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
@@ -139,3 +146,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API documentation for Log Prediction',
     'VERSION': '1.0.0',
 }
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default
+    'user_management.backends.EmailBackend',     # Custom
+]
