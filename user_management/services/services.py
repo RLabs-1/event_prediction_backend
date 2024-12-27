@@ -1,7 +1,23 @@
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-from user_management.models import User
+from user_management.models.models import User
+
+class RegistrationService:
+    @staticmethod
+    def register_user(validated_data):
+        
+        user = User(
+            email=validated_data['email'],
+            name=validated_data['name'],
+            is_active=True,
+            is_staff=False
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+       
+        return user
+
 
 class JWTService:
     @staticmethod
@@ -34,3 +50,4 @@ class JWTService:
                 return User.objects.get(id=user_id)
             except (TokenError, InvalidToken, User.DoesNotExist):
                 return None
+
