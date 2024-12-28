@@ -20,7 +20,7 @@ from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
 
-from user_management.views.views import RegistrationView
+from user_management.views.views import RegistrationView, UserUpdateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
     path('api/user/register/', RegistrationView.as_view(), name='user-register'), #User registeration
+    path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'), # Updating User Details
 ]
 
