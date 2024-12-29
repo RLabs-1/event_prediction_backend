@@ -1,9 +1,11 @@
 
+
 from user_management.models.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+
 
 class UserService:
     @staticmethod
@@ -20,6 +22,8 @@ class UserService:
             return {"message": "User is already active."}
         except ObjectDoesNotExist:
             return {"message": "User not found!."}
+
+
 
 
 
@@ -72,4 +76,5 @@ class JWTService:
                 return User.objects.get(id=user_id)
             except (TokenError, InvalidToken, User.DoesNotExist):
                 return None
+
 
