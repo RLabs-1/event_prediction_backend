@@ -1,7 +1,7 @@
 """
 URL configuration for log_prediction_backend project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+The urlpatterns list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
 Examples:
 Function views
@@ -20,19 +20,19 @@ from user_management.views.views import ActivateUserView
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
+
+from user_management.views.views import RegistrationView
 from user_management.views.views import UserLoginView
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),  # redoc UI
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
+    path('api/user/register/', RegistrationView.as_view(), name='user-register'), #User registeration
+    path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'), #Endpoint to activate the user
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
 
-
 ]
-
-
 
