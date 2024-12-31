@@ -20,7 +20,7 @@ from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
 
-from user_management.views.views import RegistrationView, UserUpdateView
+from user_management.views.views import RegistrationView, UserUpdateView,ActivateUserView
 from user_management.views.views import UserLoginView
 
 
