@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -41,6 +42,9 @@ class User(AbstractBaseUser):
     rating = models.FloatField(default=0.0)
     num_of_usages = models.IntegerField(default=0)
     is_verified = models.BooleanField(default=False)
+    is_password_reset_pending = models.BooleanField(default=False)
+    password_reset_code = models.CharField(max_length=6, null=True, blank=True)
+    password_reset_code_expiry = models.DateTimeField(null=True, blank=True)
 
     """User name should be the email"""
     USERNAME_FIELD = 'email'

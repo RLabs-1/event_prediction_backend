@@ -150,3 +150,14 @@ AUTHENTICATION_BACKENDS = [
     'user_management.backends.EmailBackend',     # Custom
 ]
 
+DOMAIN_URL = 'http://localhost:8000'  # Change this in production
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Change this based on your email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'  # Change this
+EMAIL_HOST_PASSWORD = 'your-app-password'  # Change this
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+

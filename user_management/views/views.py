@@ -86,3 +86,22 @@ class UserLoginView(APIView):
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        """
+        Initiates the password reset process for a user
+        """
+        email = request.data.get('email')
+        
+        if not email:
+            return Response({
+                'success': False,
+                'message': 'Email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        service_response = UserService.initiate_password_reset(email)
+        
+        if service_response['success']:
+            return Response(service_response, status=status.HTTP_200_OK)
+        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)

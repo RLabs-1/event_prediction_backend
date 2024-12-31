@@ -24,7 +24,8 @@ from user_management.views.views import (
     RegistrationView, 
     UserUpdateView, 
     UserLoginView,
-    ActivateUserView
+    ActivateUserView,
+    ForgotPasswordView
 )
 
 
@@ -37,5 +38,6 @@ urlpatterns = [
     path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'),  # Updating User Details
     path('api/user/<int:user_id>/activate/', ActivateUserView.as_view(), name='activate-user'),  # Endpoint to activate the user
     path('api/user/login/', UserLoginView.as_view(), name='user-login'),
+    path('api/user/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
 ]
 
