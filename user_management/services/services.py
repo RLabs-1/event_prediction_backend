@@ -1,5 +1,3 @@
-
-
 from user_management.models.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -18,10 +16,19 @@ class UserService:
             if not user.is_active:
                 user.is_active = True
                 user.save()
-                return {"message": f"User {user_id} activated successfully."}
-            return {"message": "User is already active."}
-        except ObjectDoesNotExist:
-            return {"message": "User not found!."}
+                return {
+                    'success': True,
+                    'message': 'User activated successfully'
+                }
+            return {
+                'success': False,
+                'message': 'User is already active'
+            }
+        except User.DoesNotExist:
+            return {
+                'success': False,
+                'message': 'User not found'
+            }
 
 
 

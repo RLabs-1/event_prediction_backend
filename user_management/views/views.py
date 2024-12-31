@@ -5,6 +5,9 @@ from user_management.services.services import RegistrationService
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
 from rest_framework import generics,  permissions
 from user_management.models.models import User
+from user_management.services.services import UserService
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 
 class RegistrationView(APIView):
     def post(self, request, *args, **kwargs):
@@ -35,19 +38,6 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
         return generics.get_object_or_404(User, id=user_id)
 
 
-from user_management.services.services import UserService
-
-
-class ActivateUserView(APIView):
-    def patch(self, request, userId):
-        """
-          Activates the user account for given user id.
-        """
-        service_response = UserService.activate_user(userId)
-        if service_response['success']:
-            return Response(service_response, status=status.HTTP_200_OK)
-        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 
@@ -63,11 +53,11 @@ from django.contrib.auth import authenticate
 from user_management.services.services import JWTService
 
 class ActivateUserView(APIView):
-    def patch(self, request, userId):
+    def patch(self, request, user_id):
         """
-          Activates the user account for given user id.
+        Activates the user account for given user id.
         """
-        service_response = UserService.activate_user(userId)
+        service_response = UserService.activate_user(user_id)
         if service_response['success']:
             return Response(service_response, status=status.HTTP_200_OK)
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
