@@ -16,12 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from user_management.views.views import ActivateUserView
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
 
-from user_management.views.views import RegistrationView
+from user_management.views.views import RegistrationView, UserUpdateView
 from user_management.views.views import UserLoginView
 
 
@@ -31,6 +30,7 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
     path('api/user/register/', RegistrationView.as_view(), name='user-register'), #User registeration
+    path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'), # Updating User Details
     path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'), #Endpoint to activate the user
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
 
