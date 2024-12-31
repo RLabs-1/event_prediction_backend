@@ -32,4 +32,7 @@ __pycache__/
 #Tokens
 myToken.txt
 
+# Add these lines to your .gitignore
+log_prediction_backend/settings/local.py
+
 
