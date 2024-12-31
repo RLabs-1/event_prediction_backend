@@ -21,6 +21,8 @@ from drf_spectacular.views import (
 )
 
 from user_management.views.views import RegistrationView, UserUpdateView
+from user_management.views.views import UserLoginView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,5 +31,8 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
     path('api/user/register/', RegistrationView.as_view(), name='user-register'), #User registeration
     path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'), # Updating User Details
+    path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'), #Endpoint to activate the user
+    path('api/user/login', UserLoginView.as_view(), name='user-login'),
+
 ]
 
