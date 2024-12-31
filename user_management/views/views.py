@@ -2,7 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from user_management.services.services import RegistrationService
-from user_management.serializers.serializers import RegistrationSerializer
+from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
+from rest_framework import generics,  permissions
+from user_management.models.models import User
 
 class RegistrationView(APIView):
     def post(self, request, *args, **kwargs):
