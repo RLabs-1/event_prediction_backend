@@ -9,6 +9,7 @@ from django.shortcuts import render
 from user_management.services.services import UserService
 from django.contrib.auth import authenticate
 from user_management.services.services import JWTService
+from rest_framework.views import APIView
 
 
 class RegistrationView(APIView):
@@ -76,3 +77,21 @@ class UserLoginView(APIView):
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+class VerifyEmailView(APIView):
+    """
+    Handles email verification by verifying the code provided.
+    """
+    def post(self, request):
+        email = request.data.get("email")
+        verification_code = request.data.get("verification_code")
+
+        if not email or not verification_code:
+            return Response({"error": "Email and verification code are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify the email and code
+        service_response = RegistrationService.verify_email(email, verification_code)
+        if "successfully" in service_response["message"]:
+            return Response(service_response, status=status.HTTP_200_OK)
+        else:
+            return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
