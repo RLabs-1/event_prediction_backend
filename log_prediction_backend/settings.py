@@ -76,16 +76,15 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db',
+        'NAME': 'event_prediction',
         'USER': 'postgres',
-        'PASSWORD': '147258magd',
+        'PASSWORD': 'haya315202903',
         'HOST': 'localhost',
-        'PORT':'5432',
-}
+        'PORT': '5432',
+    }
 }
 
 
