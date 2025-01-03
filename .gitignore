@@ -33,3 +33,5 @@ __pycache__/
 myToken.txt
 
 
+"venv/" 
+venv/ 
