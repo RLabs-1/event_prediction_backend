@@ -4,6 +4,9 @@
 /lib/
 .env
 pyvenv.cfg
+/Scripts/
+*/migrations
+/venv
 
 
 #Compiled Files

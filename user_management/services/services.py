@@ -1,4 +1,5 @@
 
+
 from user_management.models.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -75,3 +76,5 @@ class JWTService:
                 return User.objects.get(id=user_id)
             except (TokenError, InvalidToken, User.DoesNotExist):
                 return None
+
+

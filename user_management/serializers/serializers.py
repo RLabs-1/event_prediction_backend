@@ -8,7 +8,6 @@ class UserSerializer(serializers.ModelSerializer):
         # fields = '__all__'
         fields = ['email', 'name', 'is_active', 'is_staff', 'rating', 'num_of_usages', 'is_verified']
 
-
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -17,6 +16,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = ['email', 'name', 'password']
 
     def create(self, validated_data):
+
         user = User(
             email=validated_data['email'],
             name=validated_data['name'],
@@ -26,7 +26,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
-
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating User details"""
@@ -53,3 +52,4 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+

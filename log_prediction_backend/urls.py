@@ -41,5 +41,3 @@ urlpatterns = [
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
 
 ]
-
-
