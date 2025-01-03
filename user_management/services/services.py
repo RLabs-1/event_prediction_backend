@@ -1,6 +1,6 @@
 
 
-from user_management.models.models import User
+from core.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
