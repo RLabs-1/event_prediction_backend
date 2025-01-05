@@ -1,7 +1,7 @@
 """
 URL configuration for log_prediction_backend project.
 
-The urlpatterns list routes URLs to views. For more information please see:
+The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
 Examples:
 Function views
@@ -16,6 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from user_management.views import views
+from django.contrib import admin
+from django.urls import path
+from user_management.views.views import ResetForgotPasswordView
+
+
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
@@ -27,17 +33,18 @@ from user_management.views.views import (
     ActivateUserView,
     ForgotPasswordView
 )
-
+from user_management.views.views import RegistrationView, UserUpdateView,ActivateUserView
+from user_management.views.views import UserLoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),  # redocUI
-    path('api/user/register/', RegistrationView.as_view(), name='user-register'),  # User registeration
-    path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'),  # Updating User Details
-    path('api/user/<int:user_id>/activate/', ActivateUserView.as_view(), name='activate-user'),  # Endpoint to activate the user
-    path('api/user/login/', UserLoginView.as_view(), name='user-login'),
-    path('api/user/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
-]
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
+    path('api/user/register/', RegistrationView.as_view(), name='user-register'), #User registeration
+    path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'), # Updating User Details
+    path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'), #Endpoint to activate the user
+    path('api/user/login', UserLoginView.as_view(), name='user-login'),
+    path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
 
+]

@@ -1,4 +1,10 @@
+
 from user_management.models.models import User
+
+
+
+from core.models import User
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
@@ -90,7 +96,7 @@ class UserService:
 class RegistrationService:
     @staticmethod
     def register_user(validated_data):
-        
+
         user = User(
             email=validated_data['email'],
             name=validated_data['name'],
@@ -99,7 +105,7 @@ class RegistrationService:
         )
         user.set_password(validated_data['password'])
         user.save()
-       
+
         return user
 
 
@@ -110,7 +116,7 @@ class JWTService:
         Create a JWT token for the given user using HS256 algorithm.
         """
         refresh = RefreshToken.for_user(user)
-        refresh.algorithm = 'HS256' 
+        refresh.algorithm = 'HS256'
         return {
             'refresh': str(refresh),
             'access': str(refresh.access_token),

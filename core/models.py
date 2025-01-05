@@ -1,8 +1,8 @@
-
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from datetime import timedelta
 from django.utils import timezone
-
+import uuid
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
@@ -36,6 +36,7 @@ class User(AbstractBaseUser):
     """
     Base User Model
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -43,9 +44,19 @@ class User(AbstractBaseUser):
     rating = models.FloatField(default=0.0)
     num_of_usages = models.IntegerField(default=0)
     is_verified = models.BooleanField(default=False)
+    #event_systems = models.ManyToManyField('EventSystem', related_name='users')  #The EventSystem model is not yet added at the time of writing this (remove comment once its added)
+
+    #A DateTime field to store the time when the verification code was generated.
+    token_time_to_live = models.DateTimeField(null=True, blank=True)
+    #A field to store the generated verification code.
+    verification_code = models.CharField(max_length=6, null=True, blank=True)  # Assuming it's a 6-digit code
+    #A Boolean field to track whether a password reset is pending.
     is_password_reset_pending = models.BooleanField(default=False)
-    password_reset_code = models.CharField(max_length=6, null=True, blank=True)
-    password_reset_code_expiry = models.DateTimeField(null=True, blank=True)
+
+    def is_token_expired(self):
+        if not self.token_time_to_live:
+            return True
+        return timezone.now() > self.token_time_to_live + timedelta(hours=1)
 
     """User name should be the email"""
     USERNAME_FIELD = 'email'
@@ -73,4 +84,3 @@ class User(AbstractBaseUser):
         Check whether the provided password matches the stored password.
         """
         return super().check_password(raw_password)
-
