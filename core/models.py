@@ -30,8 +30,6 @@ class UserManager(BaseUserManager):
 
         return user
 
-
-
 class User(AbstractBaseUser):
     """
     Base User Model
@@ -84,3 +82,77 @@ class User(AbstractBaseUser):
         Check whether the provided password matches the stored password.
         """
         return super().check_password(raw_password)
+
+
+class FileReference(models.Model):
+    """
+    A model to store metadata about uploaded files in the system.
+    This includes unique identification, file details, storage information, and processing status.
+    """
+    #A unique identifier for the file, generated using UUID.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    #The name of the file as it was uploaded or renamed.
+    file_name = models.CharField(max_length=255)
+    #The URL where the file is stored or can be accessed.
+    url = models.URLField(max_length=500)
+
+    #Storage Provider (ENUM)
+    class StorageProvider(models.TextChoices):
+        """
+        Enum class representing different storage providers.
+        Options include AWS, S3, GoogleDrive, LocalStorage, etc.
+        """
+        AWS = 'AWS'
+        S3 = 'S3'
+        GOOGLE_DRIVE = 'GoogleDrive'
+        LOCAL = 'LocalStorage'
+
+    storage_provider = models.CharField(
+        max_length=20,
+        choices=StorageProvider.choices,
+        default=StorageProvider.LOCAL,
+    )
+
+    #Size (in bytes)
+    size = models.PositiveBigIntegerField()
+    #Upload Date
+    upload_date = models.DateTimeField(auto_now_add=True)
+
+    #Upload Status (ENUM)
+    class UploadStatus(models.TextChoices):
+        """
+        Enum class representing the current status of the file upload.
+        Possible values include 'Complete', 'Pending', 'Failed', and 'Processing'.
+        """
+
+        COMPLETE = 'Complete'
+        PENDING = 'Pending'
+        FAILED = 'Failed'
+        PROCESSING = 'Processing'
+
+    upload_status = models.CharField(
+        max_length=20,
+        choices=UploadStatus.choices,
+        default=UploadStatus.PENDING,
+    )
+
+    #File Type (ENUM)
+    class FileType(models.TextChoices):
+        """
+        Enum class representing the type of the file.
+        Common types include 'EventFile' and 'PredictionFile'.
+        """
+        EVENT_FILE = 'EventFile'
+        PREDICTION_FILE = 'PredictionFile'
+
+    file_type = models.CharField(
+        max_length=20,
+        choices=FileType.choices,
+        default=FileType.EVENT_FILE,
+    )
+
+    def __str__(self):
+        """
+        String representation of the FileReference model, displaying the file name and type.
+         """
+        return f"{self.file_name} ({self.get_file_type_display()})"
