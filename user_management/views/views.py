@@ -9,15 +9,25 @@ from rest_framework import status
 from user_management.services.services import RegistrationService
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
 from rest_framework import generics,  permissions
+
+from user_management.models.models import User
+from user_management.services.services import UserService
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+
 from core.models import User
 from django.shortcuts import render
 from user_management.services.services import UserService
 from django.contrib.auth import authenticate
 from user_management.services.services import JWTService
 from drf_spectacular.utils import extend_schema
+from django.shortcuts import render
 
+from rest_framework import status
+from django.contrib.auth import authenticate
 
 User = get_user_model()
+
 
 
 class RegistrationView(APIView):
@@ -43,12 +53,13 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
         # Ensure the user is retrieved based on the URL parameter
         user_id = self.kwargs.get('user_id')
         return generics.get_object_or_404(User, id=user_id)
+
 class ActivateUserView(APIView):
-    def patch(self, request, userId):
+    def patch(self, request, user_id):
         """
-          Activates the user account for given user id.
+        Activates the user account for given user id.
         """
-        service_response = UserService.activate_user(userId)
+        service_response = UserService.activate_user(user_id)
         if service_response['success']:
             return Response(service_response, status=status.HTTP_200_OK)
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
@@ -74,6 +85,26 @@ class UserLoginView(APIView):
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        """
+        Initiates the password reset process for a user
+        """
+        email = request.data.get('email')
+        
+        if not email:
+            return Response({
+                'success': False,
+                'message': 'Email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        service_response = UserService.initiate_password_reset(email)
+        
+        if service_response['success']:
+            return Response(service_response, status=status.HTTP_200_OK)
+        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
@@ -138,5 +169,6 @@ class ResetForgotPasswordView(APIView):
             return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
