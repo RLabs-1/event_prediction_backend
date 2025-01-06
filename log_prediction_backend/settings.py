@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'user_management',
     'rest_framework',
     'drf_spectacular',  # Add Spectacular for Open api
-    'core',
+    'core'
 ]
 
 MIDDLEWARE = [
