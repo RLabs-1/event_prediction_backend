@@ -160,8 +160,7 @@ class FileReference(models.Model):
 =======
 
 class FileReference(models.Model):
-    file = models.FileField(upload_to='file_references/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    pass
 
 class EventStatus(models.TextChoices):
     ACTIVE = 'Active', 'Active'
