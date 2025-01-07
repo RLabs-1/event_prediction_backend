@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+
+from file_manager.views.views import DeselectFileView
 from user_management.views import views
 from django.contrib import admin
 from django.urls import path
@@ -46,5 +48,6 @@ urlpatterns = [
     path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'), #Endpoint to activate the user
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
-
+    path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(),
+         name='deselect-file'),
 ]
