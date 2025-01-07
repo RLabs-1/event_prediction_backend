@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(7v(oyc&1ixz5onr=$3gg8idp)!3^*toob!#i7#%2t6**ts=wv'
+SECRET_KEY = 'django-insecure-(7v(oyc&1ixz5onr=$3gg8idp)!3^toob!#i7#%2t6*ts=wv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user_management',
+    'rest_framework',
+    'drf_spectacular',  # Add Spectacular for Open api
+    'core'
 ]
 
 MIDDLEWARE = [
@@ -126,3 +129,35 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+REST_FRAMEWORK = {
+     #Authentication classes
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Schema generation for API documentation
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Log Prediction API',
+    'DESCRIPTION': 'API documentation for Log Prediction',
+    'VERSION': '1.0.0',
+}
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default
+    'user_management.backends.EmailBackend',     # Custom
+]
+
+DOMAIN_URL = 'http://localhost:8000'  # Change this in production
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Change this based on your email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'  # Change this
+EMAIL_HOST_PASSWORD = 'your-app-password'  # Change this
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+

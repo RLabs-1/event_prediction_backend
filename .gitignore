@@ -4,6 +4,9 @@
 /lib/
 .env
 pyvenv.cfg
+/Scripts/
+*/migrations
+/venv
 
 
 #Compiled Files
@@ -30,3 +33,5 @@ __pycache__/
 myToken.txt
 
 
+"venv/" 
+venv/ 
