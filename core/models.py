@@ -31,7 +31,6 @@ class UserManager(BaseUserManager):
         return user
 
 
-
 class User(AbstractBaseUser):
     """
     Base User Model
@@ -84,6 +83,7 @@ class User(AbstractBaseUser):
         Check whether the provided password matches the stored password.
         """
         return super().check_password(raw_password)
+
 
 class FileReference(models.Model):
     """
