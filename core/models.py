@@ -30,6 +30,7 @@ class UserManager(BaseUserManager):
 
         return user
 
+
 class User(AbstractBaseUser):
     """
     Base User Model
