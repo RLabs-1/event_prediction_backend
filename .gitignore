@@ -7,7 +7,7 @@ pyvenv.cfg
 /Scripts/
 */migrations
 /venv
-
+.venv
 
 #Compiled Files
 __pycache__/
