@@ -1,21 +1,19 @@
 # views.py
 from django.contrib.auth import get_user_model
-from django.views.decorators.csrf import csrf_exempt
 import json
-from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from user_management.services.services import RegistrationService
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
-from rest_framework import generics,  permissions
+from rest_framework import generics, permissions
 from core.models import User
-from django.shortcuts import render
 from user_management.services.services import UserService
 from django.contrib.auth import authenticate
 from user_management.services.services import JWTService
 from drf_spectacular.utils import extend_schema
-
+from django.shortcuts import render
+from rest_framework import status
+from django.contrib.auth import authenticate
 
 User = get_user_model()
 
@@ -30,6 +28,8 @@ class RegistrationView(APIView):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     """View for updating User details"""
     permission_classes = (permissions.IsAuthenticated,)
@@ -43,19 +43,24 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
         # Ensure the user is retrieved based on the URL parameter
         user_id = self.kwargs.get('user_id')
         return generics.get_object_or_404(User, id=user_id)
+
+
 class ActivateUserView(APIView):
-    def patch(self, request, userId):
+    def patch(self, request, user_id):
         """
-          Activates the user account for given user id.
+        Activates the user account for given user id.
         """
-        service_response = UserService.activate_user(userId)
+        service_response = UserService.activate_user(user_id)
         if service_response['success']:
             return Response(service_response, status=status.HTTP_200_OK)
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UserLoginView(APIView):
     """
     Handles user login and returns a JWT token.
     """
+
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
@@ -63,17 +68,36 @@ class UserLoginView(APIView):
         if not email or not password:
             return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-
         # Authenticate user
         user = authenticate(email=email, password=password)
         if user is not None:
-            tokens = JWTService.create_token(user) # Generate JWT token using JWTService
+            tokens = JWTService.create_token(user)  # Generate JWT token using JWTService
             return Response({
                 "refresh": tokens["refresh"],
                 "access": tokens["access"],
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        """
+        Initiates the password reset process for a user
+        """
+        email = request.data.get('email')
+
+        if not email:
+            return Response({
+                'success': False,
+                'message': 'Email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        service_response = UserService.initiate_password_reset(email)
+
+        if service_response['success']:
+            return Response(service_response, status=status.HTTP_200_OK)
+        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
