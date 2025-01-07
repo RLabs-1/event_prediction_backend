@@ -30,6 +30,7 @@ class UserManager(BaseUserManager):
 
         return user
 
+
 class User(AbstractBaseUser):
     """
     Base User Model
@@ -156,3 +157,37 @@ class FileReference(models.Model):
         String representation of the FileReference model, displaying the file name and type.
          """
         return f"{self.file_name} ({self.get_file_type_display()})"
+
+
+class EventStatus(models.TextChoices):
+    ACTIVE = 'Active', 'Active'
+    INACTIVE = 'Inactive', 'Inactive'
+
+class EventSystem(models.Model):
+    #A CharField for the name of the EventSystem.
+    name = models.CharField(max_length=255)
+
+    #A unique identifier for each instance, generated using Python's uuid module.
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+    #A many-to-many relationship with the FileReference model to allow multiple file associations.
+    file_objects = models.ManyToManyField(FileReference, related_name='event_systems')
+
+    #An Enum field with choices of Active or Inactive, using Django's TextChoices.
+    status = models.CharField(
+        max_length=8,
+        choices=EventStatus.choices,
+        default=EventStatus.ACTIVE
+    )
+
+    # Automatically set to the current timestamp when a record is created.
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Automatically updated with the current timestamp whenever the record is updated.
+    last_updated_at = models.DateTimeField(auto_now=True)
+
+    #A foreign key to the User model, creating a relationship between the EventSystem and the user who owns it.
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_systems')
+
+    def __str__(self):
+        return self.name
