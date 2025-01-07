@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+
+from file_manager.views.views import DeselectFileView
 from user_management.views import views
 from django.contrib import admin
 from django.urls import path
@@ -27,8 +29,8 @@ from drf_spectacular.views import (
 )
 
 from user_management.views.views import (
-    RegistrationView,
-    UserUpdateView,
+    RegistrationView, 
+    UserUpdateView, 
     UserLoginView,
     ActivateUserView,
     ForgotPasswordView
@@ -48,5 +50,4 @@ urlpatterns = [
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(),
          name='deselect-file'),
-
 ]
