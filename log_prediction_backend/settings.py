@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',  # Add Spectacular for Open api
     'core',
-
 ]
 
 MIDDLEWARE = [
@@ -81,9 +80,9 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db',
+        'NAME': 'event_prediction',
         'USER': 'postgres',
-        'PASSWORD': '123456',
+        'PASSWORD': 'haya315202903',
         'HOST': 'localhost',
         'PORT': '5432',
     }
