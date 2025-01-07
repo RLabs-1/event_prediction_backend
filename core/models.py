@@ -30,6 +30,8 @@ class UserManager(BaseUserManager):
 
         return user
 
+
+
 class User(AbstractBaseUser):
     """
     Base User Model
@@ -83,8 +85,6 @@ class User(AbstractBaseUser):
         """
         return super().check_password(raw_password)
 
-
-<<<<<<< HEAD
 class FileReference(models.Model):
     """
     A model to store metadata about uploaded files in the system.
@@ -157,10 +157,7 @@ class FileReference(models.Model):
         String representation of the FileReference model, displaying the file name and type.
          """
         return f"{self.file_name} ({self.get_file_type_display()})"
-=======
 
-class FileReference(models.Model):
-    pass
 
 class EventStatus(models.TextChoices):
     ACTIVE = 'Active', 'Active'
@@ -194,4 +191,3 @@ class EventSystem(models.Model):
 
     def __str__(self):
         return self.name
->>>>>>> 76c1d9c (Create a model for EventSystem)
