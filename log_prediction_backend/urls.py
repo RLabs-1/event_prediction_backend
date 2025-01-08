@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from file_manager.views.views import DeselectFileView, FileUploadView
+from file_manager.views.views import DeselectFileView, FileUploadView,EventSystemFileListView
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
@@ -40,5 +40,6 @@ urlpatterns = [
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
-    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file')
+    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
+    path('api/eventSystem/<uuid:eventSystemId>/files/', EventSystemFileListView.as_view(), name='eventsystem-files'),
 ]
