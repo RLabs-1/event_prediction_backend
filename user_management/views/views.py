@@ -149,6 +149,12 @@ class ResetForgotPasswordView(APIView):
             user.save()
 
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+      
+          
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 ##Bet-30 I will work on changing this according to the details I'm using for the Bet-20 assignment##
 def user_view(request):
@@ -160,9 +166,4 @@ def user_view(request):
         'email': 'user@example.com'
     }
     return JsonResponse(user_data)          
-##Bet-30##        
-          
-        except json.JSONDecodeError:
-            return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+##Bet-30##  
