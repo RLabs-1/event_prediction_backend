@@ -8,6 +8,8 @@ from user_management.serializers.serializers import RegistrationSerializer, User
 from user_management.models.models import User
 from core.models import User
 from drf_spectacular.utils import extend_schema
+from django.shortcuts import render
+from django.http import JsonResponse
 import json
 
 User = get_user_model()
@@ -147,8 +149,21 @@ class ResetForgotPasswordView(APIView):
             user.save()
 
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
-
+      
+          
         except json.JSONDecodeError:
             return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+##Bet-30 I will work on changing this according to the details I'm using for the Bet-20 assignment##
+def user_view(request):
+    #A function that handles requests to /api/user
+    #I still don't know what specific data we need, so meanwhile I used these, but I can replace it later with actual database queries
+
+    user_data = {
+        'username': 'example_user',
+        'email': 'user@example.com'
+    }
+    return JsonResponse(user_data)          
+##Bet-30##  

@@ -15,8 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 from file_manager.views.views import DeselectFileView, FileUploadView
+
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
@@ -41,4 +42,5 @@ urlpatterns = [
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
     path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file')
+    path('user_management/', include('user_management.urls')), #To make the /api/user/ being recognized by Django
 ]
