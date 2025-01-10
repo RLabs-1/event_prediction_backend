@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'core',
 ]
 
+AUTH_USER_MODEL = 'core.User'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -83,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': '123456',
+        'PASSWORD': 'adankh212',
         'HOST': 'localhost',
         'PORT': '5432',
     }
