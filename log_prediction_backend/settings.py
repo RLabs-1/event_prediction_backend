@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(7v(oyc&1ixz5onr=$3gg8idp)!3^*toob!#i7#%2t6**ts=wv'
+SECRET_KEY = 'django-insecure-(7v(oyc&1ixz5onr=$3gg8idp)!3^toob!#i7#%2t6*ts=wv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user_management',
+    'rest_framework',
+    'drf_spectacular',  # Add Spectacular for Open api
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -77,9 +81,9 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction',
+        'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': 'haya315202903',
+        'PASSWORD': '123456',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -126,3 +130,27 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+REST_FRAMEWORK = {
+     #Authentication classes
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Schema generation for API documentation
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Log Prediction API',
+    'DESCRIPTION': 'API documentation for Log Prediction',
+    'VERSION': '1.0.0',
+}
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default
+    'user_management.backends.EmailBackend',     # Custom
+]
+
+# Directory to store uploaded files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
