@@ -1,4 +1,5 @@
 # serializers.py
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from core.models import User
 
@@ -7,6 +8,16 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         # fields = '__all__'
         fields = ['email', 'name', 'is_active', 'is_staff', 'rating', 'num_of_usages', 'is_verified']
+
+
+
+
+User = get_user_model()
+
+class UserDeactivateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_active']
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)

@@ -1,8 +1,13 @@
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from user_management.services.services import UserService
+from user_management.serializers.serializers import UserDeactivateSerializer
+
 # views.py
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import status, generics, permissions
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
 from user_management.models.models import User
@@ -11,6 +16,20 @@ from drf_spectacular.utils import extend_schema
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
+
+class UserDeactivateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, userId):
+        """
+        Deactivate a user by their ID.
+        """
+        try:
+            user = UserService.deactivate_user(userId)
+            serializer = UserDeactivateSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ValueError:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 User = get_user_model()
 

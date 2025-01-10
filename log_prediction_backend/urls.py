@@ -30,8 +30,11 @@ from user_management.views.views import (
     ResetForgotPasswordView,
 )
 
+from user_management.views.views import UserDeactivateView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/user/<int:userId>/deactivate', UserDeactivateView.as_view(), name='deactivate-user'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
