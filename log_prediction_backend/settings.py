@@ -132,6 +132,15 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+#We will be using Gmail SMTP to send emails in Django
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'eventprediction.backend@gmail.com'  #A new Gmail accoun that I created in order to send Emails to the register.
+EMAIL_HOST_PASSWORD = 'ledz sibu oocn lcwo'   #The unique host password I got for my Gmail account.
+
+
 REST_FRAMEWORK = {
      #Authentication classes
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -154,3 +163,4 @@ AUTHENTICATION_BACKENDS = [
 # Directory to store uploaded files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+

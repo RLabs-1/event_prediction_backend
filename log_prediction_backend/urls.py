@@ -44,6 +44,6 @@ urlpatterns = [
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
-    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file')
-    path('user_management/', include('user_management.urls')), #To make the /api/user/ being recognized by Django
+    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
+    path('user_management/', include('user_management.urls')), #Including the user_management urls, to make the /api/user/ being recognized by Django
 ]
