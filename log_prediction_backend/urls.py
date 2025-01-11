@@ -15,8 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from file_manager.views.views import DeselectFileView, FileUploadView,EventSystemFileListView
+from django.urls import path,include
+from file_manager.views.views import DeselectFileView, FileUploadView
+
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 )
@@ -29,8 +30,11 @@ from user_management.views.views import (
     ResetForgotPasswordView,
 )
 
+from user_management.views.views import UserDeactivateView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/user/<int:userId>/deactivate', UserDeactivateView.as_view(), name='deactivate-user'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),#redocUI
@@ -40,6 +44,6 @@ urlpatterns = [
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
-    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
-    path('api/eventSystem/<uuid:eventSystemId>/files/', EventSystemFileListView.as_view(), name='eventsystem-files'),
+    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file')
+    path('user_management/', include('user_management.urls')), #To make the /api/user/ being recognized by Django
 ]

@@ -1,14 +1,35 @@
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from user_management.services.services import UserService
+from user_management.serializers.serializers import UserDeactivateSerializer
+
 # views.py
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import status, generics, permissions
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
 from user_management.models.models import User
 from core.models import User
 from drf_spectacular.utils import extend_schema
+from django.shortcuts import render
+from django.http import JsonResponse
 import json
+
+class UserDeactivateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, userId):
+        """
+        Deactivate a user by their ID.
+        """
+        try:
+            user = UserService.deactivate_user(userId)
+            serializer = UserDeactivateSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ValueError:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 User = get_user_model()
 
@@ -147,8 +168,21 @@ class ResetForgotPasswordView(APIView):
             user.save()
 
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
-
+      
+          
         except json.JSONDecodeError:
             return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+##Bet-30 I will work on changing this according to the details I'm using for the Bet-20 assignment##
+def user_view(request):
+    #A function that handles requests to /api/user
+    #I still don't know what specific data we need, so meanwhile I used these, but I can replace it later with actual database queries
+
+    user_data = {
+        'username': 'example_user',
+        'email': 'user@example.com'
+    }
+    return JsonResponse(user_data)          
+##Bet-30##  

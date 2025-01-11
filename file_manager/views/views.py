@@ -45,6 +45,11 @@ class EventSystemFileListView(APIView):
         try:
             event_system = EventSystem.objects.get(uuid=eventSystemId)
             files = event_system.file_objects.all()
+            if not files:
+                return Response(
+                    {"message": "No files associated with this EventSystem", "files": []},
+                    status=status.HTTP_200_OK
+                )
             serializer = FileReferenceSerializer(files, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except EventSystem.DoesNotExist:
