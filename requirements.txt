@@ -1,4 +1,7 @@
 django>=5.0
 django-rest-framework
+djangorestframework-simplejwt
+drf-spectacular
+
 
 
