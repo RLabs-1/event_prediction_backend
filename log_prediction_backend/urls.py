@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from file_manager.views.views import DeselectFileView, FileUploadView
+from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView
 
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
@@ -31,6 +31,8 @@ from user_management.views.views import (
 )
 
 from user_management.views.views import UserDeactivateView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -44,6 +46,9 @@ urlpatterns = [
     path('api/user/login', UserLoginView.as_view(), name='user-login'),
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
-    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file')
-    path('user_management/', include('user_management.urls')), #To make the /api/user/ being recognized by Django
-]
+    path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
+    path('user_management/', include('user_management.urls')), #Including the user_management urls, to make the /api/user/ being recognized by Django
+    path('api/user/createEventSystem/', EventSystemCreateView.as_view(), name='create-eventsystem'),
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

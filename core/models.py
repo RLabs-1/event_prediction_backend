@@ -43,7 +43,7 @@ class User(AbstractBaseUser):
     rating = models.FloatField(default=0.0)
     num_of_usages = models.IntegerField(default=0)
     is_verified = models.BooleanField(default=False)
-    #event_systems = models.ManyToManyField('EventSystem', related_name='users')  #The EventSystem model is not yet added at the time of writing this (remove comment once its added)
+    event_systems = models.ManyToManyField('EventSystem', related_name='users')
 
     #A DateTime field to store the time when the verification code was generated.
     token_time_to_live = models.DateTimeField(null=True, blank=True)
@@ -187,7 +187,7 @@ class EventSystem(models.Model):
     last_updated_at = models.DateTimeField(auto_now=True)
 
     #A foreign key to the User model, creating a relationship between the EventSystem and the user who owns it.
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_systems')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_event_systems')
 
     def __str__(self):
         return self.name
