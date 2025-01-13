@@ -1,13 +1,9 @@
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from user_management.services.services import UserService
-from user_management.serializers.serializers import UserDeactivateSerializer
-
 # views.py
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import status, generics, permissions
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer
 from user_management.models.models import User
@@ -16,6 +12,7 @@ from drf_spectacular.utils import extend_schema
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
+from ..services.email_service import EmailService
 
 class UserDeactivateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -175,7 +172,22 @@ class ResetForgotPasswordView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-##Bet-30 I will work on changing this according to the details I'm using for the Bet-20 assignment##
+          
+def user_register(request):
+
+    user_email = "raneem.dz34@gmail.com"  #We should use the registered email
+
+    #Sending welcome email
+    email_service = EmailService()
+    try:
+        email_service.send_email(user_email)
+        return JsonResponse({"message": "User registered and email sent successfully!"})
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to send email: {str(e)}"}, status=500)
+      
+      
+          
+##Bet-30##
 def user_view(request):
     #A function that handles requests to /api/user
     #I still don't know what specific data we need, so meanwhile I used these, but I can replace it later with actual database queries
