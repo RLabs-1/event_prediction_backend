@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from file_manager.views.views import DeselectFileView, FileUploadView
+from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView
 
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
@@ -33,8 +33,6 @@ from user_management.views.views import (
 from user_management.views.views import UserDeactivateView
 from django.conf import settings
 from django.conf.urls.static import static
-
-from core.views import EventSystemCreateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
