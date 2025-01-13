@@ -2,9 +2,27 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from file_manager.services.services import deselect_file
+from file_manager.services.services import deselect_file, EventSystemService
 from django.conf import settings
 import os
+from rest_framework.generics import CreateAPIView
+from core.models import EventSystem
+from file_manager.serializers.serializers import EventSystemCreateSerializer
+from rest_framework.permissions import IsAuthenticated
+
+
+
+class EventSystemCreateView(CreateAPIView):
+    """View to create an EventSystem """
+    queryset = EventSystem.objects.all()
+    serializer_class = EventSystemCreateSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        """Use the EventSystemService to handle the creation logic."""
+        name = serializer.validated_data['name']
+        EventSystemService.create_event_system(name=name, user=self.request.user)
+
 
 class DeselectFileView(APIView):
     """
