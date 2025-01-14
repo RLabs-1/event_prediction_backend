@@ -1,4 +1,20 @@
 from django.contrib.auth import get_user_model
+from user_management.models.models import User
+from core.models import User
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+import random
+from datetime import timedelta
+from django.utils import timezone
+from django.core.mail import send_mail
+from django.conf import settings
+from smtplib import SMTPException
+import logging
+
+
+# Set up logger in order to track Errors in User Management
+logger = logging.getLogger(__name__)
 
 class UserService:
     @staticmethod
@@ -9,30 +25,16 @@ class UserService:
             if user.is_active:
                 user.is_active = False
                 user.save()
-                return {"message": f"User {user.email} deactivated success"}
+                return {"message": f"User {user.email} deactivated successfully"}
             else:
                 return {"message": f"User {user.email} is already deactivated"}
         except User.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found during deactivation.")
             raise ValueError('User not found.')
         except Exception as e:
+            logger.error(f"Error occurred during deactivation of user {user_id}: {str(e)}")
             raise ValueError(f"An error occurred: {str(e)}")
 
-
-from user_management.models.models import User
-
-
-
-from core.models import User
-
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-import random
-from datetime import timedelta
-from django.utils import timezone
-from django.core.mail import send_mail
-from django.conf import settings
 
 
 class UserService:
@@ -55,10 +57,18 @@ class UserService:
                 'message': 'User is already active'
             }
         except User.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found during activation.")
             return {
                 'success': False,
                 'message': 'User not found'
             }
+        except Exception as e:
+            logger.error(f"Error occurred during activation of user {user_id}: {str(e)}")
+            return {
+                'success': False,
+                'message': f"Unexpected error: {str(e)}"
+            }
+
 
     @staticmethod
     def initiate_password_reset(email):
@@ -99,16 +109,17 @@ class UserService:
                 'success': True,
                 'message': 'Password reset verification code sent successfully'
             }
-            
+
+        # Including errors for email sending issues:
         except User.DoesNotExist:
-            return {
-                'success': False,
-                'message': 'No user found with this email address'
-            }
-
-
-
-
+            logger.error(f"User with email {email} not found during password reset.")
+            raise ValueError("No user found with this email address.")
+        except SMTPException as e:
+            logger.error(f"Error sending password reset email to {email}: {str(e)}")
+            raise ValueError(f"Error sending email: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error during password reset for {email}: {str(e)}")
+            raise ValueError(f"Unexpected error during password reset: {str(e)}")
 
 
 

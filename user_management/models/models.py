@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
-
+from django.core.exceptions import ValidationError
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
@@ -12,21 +12,25 @@ class UserManager(BaseUserManager):
             raise ValueError("Must provide an email")
         email = self.normalize_email(email)
 
-        user = self.model(email=email, **extra_field)
-        user.set_password(password)
-        user.save(using=self._db)
-
+        try:
+            user = self.model(email=email, **extra_field)
+            user.set_password(password)
+            user.save(using=self._db)
+        except Exception as e:      #Taking care of errors that may occur during user creation.
+            raise ValidationError(f"Error creating user: {str(e)}")
         return user
 
 
     def create_superuser(self, email, password=None):
         """Creates a superuser"""
-        user = self.create_user(email, password)
+        try:
+            user = self.create_user(email, password)
 
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-
+            user.is_staff = True
+            user.is_superuser = True
+            user.save(using=self._db)
+        except Exception as e:      #Taking care of errors that may occur during superuser creation.
+            raise ValidationError(f"Error creating superuser: {str(e)}")
         return user
 
 

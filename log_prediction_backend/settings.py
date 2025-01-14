@@ -166,3 +166,32 @@ AUTHENTICATION_BACKENDS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'ERROR', #We can change this level to 'DEBUG' or 'INFO', if we want to see detailed logs for debugging purposes
+            'class': 'logging.StreamHandler',  #Logs to console
+        },
+        'file': {
+            'level': 'ERROR',    ##We can change this level to 'DEBUG', if we want to see detailed logs
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'error.log'),  # Path to log file in the root directory
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],  # Output logs to both console and file
+            'level': 'ERROR',  #We can change this level to 'DEBUG' or 'INFO', if we want to log more than just errors for our user_management services
+            'propagate': True,  # Propagate logs to higher-level loggers
+        },
+        'user_management': {
+            'handlers': ['console', 'file'],
+            'level': 'ERROR',
+            'propagate': False,  #Prevent logs from propagating to higher-level loggers
+        },
+    },
+}
