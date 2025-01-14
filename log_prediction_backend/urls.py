@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 from file_manager.views.views import DeselectFileView, FileUploadView
+from file_manager.views.views import EventSystemNameUpdateView
 
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
@@ -46,4 +47,5 @@ urlpatterns = [
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
     path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
     path('user_management/', include('user_management.urls')), #Including the user_management urls, to make the /api/user/ being recognized by Django
+    path('api/eventSystem/<uuid:eventSystemId>/', EventSystemNameUpdateView.as_view(), name='update_event_system_name'),
 ]
