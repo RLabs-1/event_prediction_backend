@@ -50,5 +50,5 @@ urlpatterns = [
     path('user_management/', include('user_management.urls')), #Including the user_management urls, to make the /api/user/ being recognized by Django
     path('api/user/createEventSystem/', EventSystemCreateView.as_view(), name='create-eventsystem'),
 
-] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
