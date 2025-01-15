@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView
+from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView
 
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
@@ -49,6 +49,8 @@ urlpatterns = [
     path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
     path('user_management/', include('user_management.urls')), #Including the user_management urls, to make the /api/user/ being recognized by Django
     path('api/user/createEventSystem/', EventSystemCreateView.as_view(), name='create-eventsystem'),
+    path('api/eventSystem/<uuid:eventSystemId>/activate', ActivateEventSystemView.as_view(), name='activate-event-system'),
+    path('api/eventSystem/<uuid:eventSystemId>/deactivate', DeactivateEventSystemView.as_view(), name='deactivate-event-system'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

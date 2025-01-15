@@ -2,13 +2,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-
-from file_manager.services.services import deselect_file, EventSystemFileService
-from file_manager.services.services import  EventSystemService
+from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService
 from django.conf import settings
 import os
 from rest_framework.generics import CreateAPIView
-from core.models import EventSystem
+from core.models import EventSystem, EventStatus
 from file_manager.serializers.serializers import EventSystemCreateSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -24,6 +22,38 @@ class EventSystemCreateView(CreateAPIView):
         """Use the EventSystemService to handle the creation logic."""
         name = serializer.validated_data['name']
         EventSystemService.create_event_system(name=name, user=self.request.user)
+
+
+class ActivateEventSystemView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def patch(self, request, eventSystemId):
+        """Activate an EventSystem."""
+        try:
+            event_system = EventSystemService.update_status(eventSystemId, EventStatus.ACTIVE, request.user)
+            return Response({
+                "message": "EventSystem activated successfully.",
+                "eventSystemId": str(event_system.uuid),
+                "status": event_system.status,
+            }, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeactivateEventSystemView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def patch(self, request, eventSystemId):
+        """Deactivate an EventSystem."""
+        try:
+            event_system = EventSystemService.update_status(eventSystemId, EventStatus.INACTIVE, request.user)
+            return Response({
+                "message": "EventSystem deactivated successfully.",
+                "eventSystemId": str(event_system.uuid),
+                "status": event_system.status,
+            }, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EventSystemFileView(APIView):
@@ -56,4 +86,3 @@ class FileUploadView(APIView):
 
         file_url = settings.MEDIA_URL + filename
         return Response({'message': 'File uploaded successfully', 'file_url': file_url}, status=status.HTTP_201_CREATED)
-
