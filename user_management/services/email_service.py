@@ -17,13 +17,13 @@ class EmailService:
         return code
 
     def send_email(self, recipient_email: str):
-        # Sends a welcome email to the registered user, including a random/unique verification code.
+        #Sends a welcome email to the registered user, including a random/unique verification code.
 
         try:
             subject = "Welcome to Our Platform!"      #the sent email subject.
             verification_code = self.generate_verification_code() #Creating a unique random verification code using generate_verification_code() func.
 
-            #the sent email message:
+            #The sent email message:
             message = f"""
             Welcome to our platform!
 
@@ -49,5 +49,10 @@ class EmailService:
             logger.info(f"Email sent successfully to {recipient_email} with subject: {subject}")
 
         except Exception as e:
-            logger.error(f"Failed to send email to {recipient_email}. Error: {str(e)}")
+            #The enhanced error logging
+            logger.error(
+                f"Failed to send email to {recipient_email}. "
+                f"Verification Code: {verification_code if 'verification_code' in locals() else 'N/A'}. "
+                f"Error Type: {type(e)} - Details: {str(e)}"
+            )
             raise e

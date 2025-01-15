@@ -2,6 +2,13 @@ from django.shortcuts import get_object_or_404
 from core.models import EventSystem, FileReference
 
 
+class EventSystemFileService:
+    @staticmethod
+    def delete_file(event_system_id, file_id):
+        event_system = get_object_or_404(EventSystem, uuid=event_system_id)
+        file_reference = get_object_or_404(FileReference, uuid=file_id, event_system=event_system)
+        file_reference.delete()
+
 class EventSystemService:
     @staticmethod
     def create_event_system(name, user):
@@ -29,16 +36,12 @@ class EventSystemService:
             raise ValueError("EventSystem not found or you do not have permission to modify it.")
 
 
-
 def deselect_file(event_system_id, file_id):
     """
        Logic for deselecting a file in an EventSystem.
-
     """
-    event_system = get_object_or_404(EventSystem, id=event_system_id)
-    file = get_object_or_404(FileReference, id=file_id, event_system=event_system)
-
-    file.selected = False
-    file.save()
-
+    event_system = get_object_or_404(EventSystem, uuid=event_system_id)
+    file_reference = get_object_or_404(FileReference, uuid=file_id, event_system=event_system)
+    file_reference.selected = False
+    file_reference.save()
     return {"message": "File has been deselected"}

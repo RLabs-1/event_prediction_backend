@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from file_manager.services.services import deselect_file, EventSystemService
+from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService
 from django.conf import settings
 import os
 from rest_framework.generics import CreateAPIView
@@ -56,6 +56,11 @@ class DeactivateEventSystemView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class EventSystemFileView(APIView):
+    def delete(self, request, eventSystemId, fileId):
+        EventSystemFileService.delete_file(eventSystemId, fileId)
+        return Response({"message": "File deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
 class DeselectFileView(APIView):
     """
        View to handle the deselecting of a file in an EventSystem.
@@ -63,8 +68,7 @@ class DeselectFileView(APIView):
     def patch(self, request, eventSystemId, fileId):
         response = deselect_file(eventSystemId, fileId)
         return Response(response, status=status.HTTP_200_OK)
-    
-# Handle file uploads
+
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
