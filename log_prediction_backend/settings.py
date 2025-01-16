@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(_file_).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -85,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': 'adankh212',
+        'PASSWORD': '147258magd',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -166,3 +166,8 @@ AUTHENTICATION_BACKENDS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
+try:
+   from .local import *
+except ImportError:
+    pass
