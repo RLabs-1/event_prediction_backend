@@ -1,5 +1,7 @@
 from django.shortcuts import get_object_or_404
 from core.models import EventSystem, FileReference
+from rest_framework.exceptions import PermissionDenied
+from ..models import File
 
 
 class EventSystemFileService:
@@ -45,3 +47,14 @@ def deselect_file(event_system_id, file_id):
     file_reference.selected = False
     file_reference.save()
     return {"message": "File has been deselected"}
+
+class FileService:
+    @staticmethod
+    def get_file(event_system_id, file_id, user):
+        event_system = get_object_or_404(EventSystem, uuid=event_system_id)
+        
+        # Check user access
+        if not event_system.user == user:
+            raise PermissionDenied("You don't have access to this file")
+            
+        return get_object_or_404(FileReference, uuid=file_id, event_system=event_system)
