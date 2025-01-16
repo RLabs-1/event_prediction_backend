@@ -166,8 +166,9 @@ AUTHENTICATION_BACKENDS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
 try:
-    from .local import *
+   from .local import *
 except ImportError:
     pass
 
