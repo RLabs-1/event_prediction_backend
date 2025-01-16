@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView
+from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView, FileRetrieveView
 
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
@@ -51,6 +51,8 @@ urlpatterns = [
     path('api/user/createEventSystem/', EventSystemCreateView.as_view(), name='create-eventsystem'),
     path('api/eventSystem/<uuid:eventSystemId>/activate', ActivateEventSystemView.as_view(), name='activate-event-system'),
     path('api/eventSystem/<uuid:eventSystemId>/deactivate', DeactivateEventSystemView.as_view(), name='deactivate-event-system'),
-
+    path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>', 
+         FileRetrieveView.as_view(), 
+         name='get-event-system-file'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

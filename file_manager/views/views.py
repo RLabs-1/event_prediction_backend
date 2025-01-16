@@ -2,13 +2,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService
+from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from django.conf import settings
 import os
 from rest_framework.generics import CreateAPIView
 from core.models import EventSystem, EventStatus
-from file_manager.serializers.serializers import EventSystemCreateSerializer
+from file_manager.serializers.serializers import EventSystemCreateSerializer, FileSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets
+from django.core.exceptions import PermissionDenied
 
 
 
@@ -86,3 +88,13 @@ class FileUploadView(APIView):
 
         file_url = settings.MEDIA_URL + filename
         return Response({'message': 'File uploaded successfully', 'file_url': file_url}, status=status.HTTP_201_CREATED)
+
+class FileRetrieveView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, eventSystemId, fileId):
+        try:
+            file = FileService.get_file(eventSystemId, fileId, request.user)
+            return Response(FileSerializer(file).data)
+        except PermissionDenied as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
