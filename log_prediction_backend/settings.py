@@ -85,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': 'adankh212',
+        'PASSWORD': '147258magd',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -165,4 +165,9 @@ AUTHENTICATION_BACKENDS = [
 # Directory to store uploaded files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+try:
+    from .local import *
+except ImportError:
+    pass
 

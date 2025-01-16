@@ -35,3 +35,6 @@ myToken.txt
 
 "venv/" 
 venv/ 
+
+# Local settings
+local.py 
