@@ -34,7 +34,7 @@ from user_management.views.views import (
     ActivateUserView,
     ResetForgotPasswordView,
     UserDeactivateView,
-    VerifyEmailView,  # New Import
+    VerifyEmailView,  # New Import from new code
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -57,5 +57,5 @@ urlpatterns = [
     path('api/eventSystem/<uuid:eventSystemId>/activate', ActivateEventSystemView.as_view(), name='activate-event-system'),
     path('api/eventSystem/<uuid:eventSystemId>/deactivate', DeactivateEventSystemView.as_view(), name='deactivate-event-system'),
     path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>', FileRetrieveView.as_view(), name='get-event-system-file'),
-    path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'),  # Email verification (New Endpoint)
+    path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'),  # New Email verification endpoint
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
