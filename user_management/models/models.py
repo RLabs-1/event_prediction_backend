@@ -1,7 +1,12 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
-
+from django.db import IntegrityError
+from user_management.exceptions.custom_exceptions import (
+    UserNotFoundException,
+    UserAlreadyExistsException,
+    InvalidUserOperationException,
+)
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
@@ -12,11 +17,13 @@ class UserManager(BaseUserManager):
             raise ValueError("Must provide an email")
         email = self.normalize_email(email)
 
-        user = self.model(email=email, **extra_field)
-        user.set_password(password)
-        user.save(using=self._db)
-
-        return user
+        try:
+            user = self.model(email=email, **extra_field)
+            user.set_password(password)
+            user.save(using=self._db)
+            return user
+        except IntegrityError:
+            raise UserAlreadyExistsException()
 
 
     def create_superuser(self, email, password=None):

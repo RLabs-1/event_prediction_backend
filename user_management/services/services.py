@@ -1,30 +1,7 @@
 from django.contrib.auth import get_user_model
-
-class UserService:
-    @staticmethod
-    def deactivate_user(user_id):
-        try:
-            User = get_user_model()
-            user = User.objects.get(id=user_id)
-            if user.is_active:
-                user.is_active = False
-                user.save()
-                return {"message": f"User {user.email} deactivated success"}
-            else:
-                return {"message": f"User {user.email} is already deactivated"}
-        except User.DoesNotExist:
-            raise ValueError('User not found.')
-        except Exception as e:
-            raise ValueError(f"An error occurred: {str(e)}")
-
-
-from user_management.models.models import User
-
-
-
-from core.models import User
-
-from django.core.exceptions import ObjectDoesNotExist
+from event_prediction_backend.core.models import User
+from event_prediction_backend.user_management.exceptions.custom_exceptions import InvalidUserOperationException, \
+    UserNotFoundException, UserInactiveException
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
@@ -37,46 +14,56 @@ from django.conf import settings
 
 class UserService:
     @staticmethod
-    def activate_user(user_id):
-        """
-        Activates the user account by setting the field of is_active to True.
-        """
+    def deactivate_user(user_id):
         try:
+            User = get_user_model()
             user = User.objects.get(id=user_id)
             if not user.is_active:
-                user.is_active = True
-                user.save()
+                raise UserInactiveException("The user is already deactivated.")
+            user.is_active = False
+            user.save()
+            return {"message": f"User {user.email} deactivated successfully"}
+        except User.DoesNotExist:
+            raise UserNotFoundException()
+        except Exception as e:
+            raise InvalidUserOperationException(str(e))
+
+    @staticmethod
+    def activate_user(user_id):
+        try:
+            User = get_user_model()
+            user = User.objects.get(id=user_id)
+            if user.is_active:
                 return {
-                    'success': True,
-                    'message': 'User activated successfully'
+                    'success': False,
+                    'message': 'User is already active',
                 }
+            user.is_active = True
+            user.save()
             return {
-                'success': False,
-                'message': 'User is already active'
+                'success': True,
+                'message': 'User activated successfully',
             }
         except User.DoesNotExist:
-            return {
-                'success': False,
-                'message': 'User not found'
-            }
+            raise UserNotFoundException()
 
     @staticmethod
     def initiate_password_reset(email):
         try:
             user = User.objects.get(email=email)
-            
+
             # Generate 6-digit code
             verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-            
+
             # Set expiry to 1 hour from now
             expiry_time = timezone.now() + timedelta(hours=1)
-            
+
             # Update user
             user.is_password_reset_pending = True
             user.password_reset_code = verification_code
             user.password_reset_code_expiry = expiry_time
             user.save()
-            
+
             # Send email
             reset_url = f"{settings.DOMAIN_URL}/api/user/reset-forgot-password"
             email_body = f"""
@@ -86,7 +73,7 @@ class UserService:
             
             This code will expire in 1 hour.
             """
-            
+
             send_mail(
                 'Password Reset Request',
                 email_body,
@@ -94,12 +81,12 @@ class UserService:
                 [email],
                 fail_silently=False,
             )
-            
+
             return {
                 'success': True,
                 'message': 'Password reset verification code sent successfully'
             }
-            
+
         except User.DoesNotExist:
             return {
                 'success': False,
@@ -107,15 +94,9 @@ class UserService:
             }
 
 
-
-
-
-
-
 class RegistrationService:
     @staticmethod
     def register_user(validated_data):
-
         user = User(
             email=validated_data['email'],
             name=validated_data['name'],
@@ -159,5 +140,3 @@ class JWTService:
                 return User.objects.get(id=user_id)
             except (TokenError, InvalidToken, User.DoesNotExist):
                 return None
-
-
