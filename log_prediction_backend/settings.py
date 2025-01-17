@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,10 +38,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'user_management',
+    'user_management.apps.UserManagementConfig',
     'rest_framework',
     'drf_spectacular',  # Add Spectacular for Open api
+    'core',
 ]
+
+AUTH_USER_MODEL = 'core.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,7 +80,6 @@ WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -84,8 +87,8 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': '147258magd',
         'HOST': 'localhost',
-        'PORT':'5432',
-}
+        'PORT': '5432',
+    }
 }
 
 
@@ -131,6 +134,15 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+#We will be using Gmail SMTP to send emails in Django
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'eventprediction.backend@gmail.com'  #A new Gmail accoun that I created in order to send Emails to the register.
+EMAIL_HOST_PASSWORD = 'ledz sibu oocn lcwo'   #The unique host password I got for my Gmail account.
+
+
 REST_FRAMEWORK = {
      #Authentication classes
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -150,3 +162,12 @@ AUTHENTICATION_BACKENDS = [
     'user_management.backends.EmailBackend',     # Custom
 ]
 
+# Directory to store uploaded files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+try:
+   from .local import *
+except ImportError:
+   pass

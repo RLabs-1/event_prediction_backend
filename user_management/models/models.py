@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -30,7 +31,7 @@ class UserManager(BaseUserManager):
 
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     """
     Base User Model
     """
@@ -38,9 +39,14 @@ class User(AbstractBaseUser):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
     rating = models.FloatField(default=0.0)
     num_of_usages = models.IntegerField(default=0)
     is_verified = models.BooleanField(default=False)
+    is_password_reset_pending = models.BooleanField(default=False)
+    password_reset_code = models.CharField(max_length=6, null=True, blank=True)
+    password_reset_code_expiry = models.DateTimeField(null=True, blank=True)
+    date_joined = models.DateTimeField(default=timezone.now)
 
     """User name should be the email"""
     USERNAME_FIELD = 'email'
@@ -48,6 +54,8 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
+    class Meta:
+        app_label = 'user_management'
 
     def __str__(self):
         """
@@ -68,3 +76,4 @@ class User(AbstractBaseUser):
         Check whether the provided password matches the stored password.
         """
         return super().check_password(raw_password)
+
