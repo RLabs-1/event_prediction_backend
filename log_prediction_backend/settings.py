@@ -85,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': 'adankh212',
+        'PASSWORD': '147258magd',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -134,17 +134,17 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-#We will be using Gmail SMTP to send emails in Django
+# We will be using Gmail SMTP to send emails in Django
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'eventprediction.backend@gmail.com'  #A new Gmail accoun that I created in order to send Emails to the register.
-EMAIL_HOST_PASSWORD = 'ledz sibu oocn lcwo'   #The unique host password I got for my Gmail account.
+EMAIL_HOST_USER = 'eventprediction.backend@gmail.com'  # A new Gmail account I created to send Emails to the register.
+EMAIL_HOST_PASSWORD = 'ledz sibu oocn lcwo'   # The unique host password I got for my Gmail account.
 
 
 REST_FRAMEWORK = {
-     #Authentication classes
+    # Authentication classes
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -157,6 +157,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API documentation for Log Prediction',
     'VERSION': '1.0.0',
 }
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Default
     'user_management.backends.EmailBackend',     # Custom
@@ -173,25 +174,32 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'ERROR', #We can change this level to 'DEBUG' or 'INFO', if we want to see detailed logs for debugging purposes
-            'class': 'logging.StreamHandler',  #Logs to console
+            'level': 'ERROR',  # You can change this to 'DEBUG' or 'INFO' for more detailed logs
+            'class': 'logging.StreamHandler',  # Logs to console
         },
         'file': {
-            'level': 'ERROR',    ##We can change this level to 'DEBUG', if we want to see detailed logs
+            'level': 'ERROR',  # You can change this to 'DEBUG' or 'INFO' for more detailed logs
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'error.log'),  # Path to log file in the root directory
+            'filename': os.path.join(BASE_DIR, 'error.log'),  # Path to log file
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],  # Output logs to both console and file
-            'level': 'ERROR',  #We can change this level to 'DEBUG' or 'INFO', if we want to log more than just errors for our user_management services
-            'propagate': True,  # Propagate logs to higher-level loggers
+            'level': 'ERROR',  # Change to 'DEBUG' or 'INFO' if more logs are needed
+            'propagate': True,
         },
         'user_management': {
             'handlers': ['console', 'file'],
             'level': 'ERROR',
-            'propagate': False,  #Prevent logs from propagating to higher-level loggers
+            'propagate': False,  # Prevent logs from propagating to higher-level loggers
         },
     },
 }
+
+
+# Try importing local settings if available
+try:
+    from .local import *
+except ImportError:
+    pass
