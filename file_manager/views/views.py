@@ -2,20 +2,16 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
-from django.conf import settings
-from core.models import EventSystem
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer
-from django.shortcuts import get_object_or_404
-import os
 from rest_framework.generics import CreateAPIView
-from core.models import EventSystem, EventStatus
-from file_manager.serializers.serializers import EventSystemCreateSerializer, FileSerializer
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets
+from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemCreateSerializer
+from django.conf import settings
+from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
-
-
+from core.models import EventSystem, EventStatus
+import os
+import aiofiles
 
 class EventSystemCreateView(CreateAPIView):
     """View to create an EventSystem """
@@ -77,7 +73,7 @@ class DeselectFileView(APIView):
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
-    def post(self, request, eventSystemId):
+    async def post(self, request):
         file = request.FILES.get('file')
         if not file:
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
@@ -85,9 +81,11 @@ class FileUploadView(APIView):
         filename = file.name
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        with open(file_path, 'wb+') as destination:
+        # Use aiofiles to handle file operations asynchronously
+        async with aiofiles.open(file_path, 'wb+') as destination:
+            # Iterate through the file chunks and write asynchronously
             for chunk in file.chunks():
-                destination.write(chunk)
+                await destination.write(chunk)
 
         file_url = settings.MEDIA_URL + filename
         return Response({'message': 'File uploaded successfully', 'file_url': file_url}, status=status.HTTP_201_CREATED)
