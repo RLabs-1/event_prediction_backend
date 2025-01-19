@@ -38,11 +38,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'user_management',
+    'user_management.apps.UserManagementConfig',
     'rest_framework',
     'drf_spectacular',  # Add Spectacular for Open api
     'core',
 ]
+
+AUTH_USER_MODEL = 'core.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -83,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': '123456',
+        'PASSWORD': '147258magd',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -164,3 +166,8 @@ AUTHENTICATION_BACKENDS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
+try:
+   from .local import *
+except ImportError:
+   pass

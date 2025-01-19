@@ -34,8 +34,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
             is_active=True,
             is_staff=False
         )
-        user.set_password(validated_data['password'])
-        user.save()
+        # user.set_password(validated_data['password'])
+        # user.save(using=self._db)
         return user
 
 class UserUpdateSerializer(serializers.ModelSerializer):
