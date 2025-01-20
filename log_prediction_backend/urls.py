@@ -34,6 +34,15 @@ from user_management.views.views import (
 from user_management.views.views import UserDeactivateView
 from django.conf import settings
 from django.conf.urls.static import static
+from file_manager.views.views import (
+    DeselectFileView,
+    FileUploadView,
+    EventSystemCreateView,
+    ActivateEventSystemView,
+    DeactivateEventSystemView,
+    FileRetrieveView,
+)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -54,6 +63,5 @@ urlpatterns = [
     path('api/eventSystem/<uuid:eventSystemId>/deactivate', DeactivateEventSystemView.as_view(), name='deactivate-event-system'),
     path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>',FileRetrieveView.as_view(),name='get-event-system-file'),
     path('api/eventSystem/<uuid:eventSystemId>/', EventSystemNameUpdateView.as_view(), name='update_event_system_name'),
+    path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'), #Endpoint to verify the email
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
