@@ -23,3 +23,11 @@ class EventSystemSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventSystem # Include all fields or specify them explicitly
         fields = '__all__'
+
+
+
+
+class EventSystemNameUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventSystem
+        fields = ['name']  # Only allow updating the name field        
