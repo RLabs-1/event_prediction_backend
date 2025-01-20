@@ -1,30 +1,18 @@
 # views.py
-from rest_framework.permissions import IsAuthenticated
-from ..services.email_service import EmailService
 from django.contrib.auth import get_user_model, authenticate
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import generics,  permissions
-from user_management.models.models import User
-from drf_spectacular.utils import extend_schema
-from user_management.services.services import (
-    RegistrationService,
-    UserService,
-    JWTService
-)
-from user_management.serializers.serializers import (
-    RegistrationSerializer,
-    UserUpdateSerializer,
-    UserDeactivateSerializer
-)
-from django.http import JsonResponse
-from django.shortcuts import render
-from user_management.services.services import UserService
-from django.contrib.auth import authenticate
-from user_management.services.services import JWTService
+from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from user_management.services.services import RegistrationService, UserService, JWTService
+from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
+from user_management.models.models import User
+from core.models import User
+from drf_spectacular.utils import extend_schema
+from django.shortcuts import render
+from django.http import JsonResponse
 import json
-
+from ..services.email_service import EmailService
 
 class UserDeactivateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -40,9 +28,7 @@ class UserDeactivateView(APIView):
         except ValueError:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-
 User = get_user_model()
-
 
 class RegistrationView(APIView):
     def post(self, request, *args, **kwargs):
@@ -54,8 +40,7 @@ class RegistrationView(APIView):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+    
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     """View for updating User details"""
     permission_classes = (permissions.IsAuthenticated,)
@@ -70,7 +55,6 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
         user_id = self.kwargs.get('user_id')
         return generics.get_object_or_404(User, id=user_id)
 
-
 class ActivateUserView(APIView):
     def patch(self, request, user_id):
         """
@@ -80,13 +64,11 @@ class ActivateUserView(APIView):
         if service_response['success']:
             return Response(service_response, status=status.HTTP_200_OK)
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
-
-
+    
 class UserLoginView(APIView):
     """
     Handles user login and returns a JWT token.
     """
-
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
@@ -94,10 +76,11 @@ class UserLoginView(APIView):
         if not email or not password:
             return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
+
         # Authenticate user
         user = authenticate(email=email, password=password)
         if user is not None:
-            tokens = JWTService.create_token(user)  # Generate JWT token using JWTService
+            tokens = JWTService.create_token(user) # Generate JWT token using JWTService
             return Response({
                 "refresh": tokens["refresh"],
                 "access": tokens["access"],
@@ -105,26 +88,24 @@ class UserLoginView(APIView):
         else:
             return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
 
-
 class ForgotPasswordView(APIView):
     def post(self, request):
         """
         Initiates the password reset process for a user
         """
         email = request.data.get('email')
-
+        
         if not email:
             return Response({
                 'success': False,
                 'message': 'Email is required'
             }, status=status.HTTP_400_BAD_REQUEST)
-
+        
         service_response = UserService.initiate_password_reset(email)
-
+        
         if service_response['success']:
             return Response(service_response, status=status.HTTP_200_OK)
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
-
 
 @extend_schema(
     summary="Reset Forgotten Password",
@@ -146,6 +127,7 @@ class ForgotPasswordView(APIView):
         410: {'description': 'Verification code expired'},
     }
 )
+
 class ResetForgotPasswordView(APIView):
     def post(self, request):
         try:
@@ -183,53 +165,36 @@ class ResetForgotPasswordView(APIView):
             user.save()
 
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
-
-
+      
+          
         except json.JSONDecodeError:
             return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+          
 def user_register(request):
-    user_email = "raneem.dz34@gmail.com"  # We should use the registered email
 
-    # Sending welcome email
+    user_email = "raneem.dz34@gmail.com"  #We should use the registered email
+
+    #Sending welcome email
     email_service = EmailService()
     try:
         email_service.send_email(user_email)
         return JsonResponse({"message": "User registered and email sent successfully!"})
     except Exception as e:
         return JsonResponse({"error": f"Failed to send email: {str(e)}"}, status=500)
-
-
+      
+      
+          
 ##Bet-30##
 def user_view(request):
-    # A function that handles requests to /api/user
-    # I still don't know what specific data we need, so meanwhile I used these, but I can replace it later with actual database queries
+    #A function that handles requests to /api/user
+    #I still don't know what specific data we need, so meanwhile I used these, but I can replace it later with actual database queries
 
     user_data = {
         'username': 'example_user',
         'email': 'user@example.com'
     }
-    return JsonResponse(user_data)
-    ##Bet-30##
-
-
-class VerifyEmailView(APIView):
-    """
-    Handles email verification by verifying the code provided.
-    """
-    """Handles email verification by verifying the provided code."""
-    def post(self, request):
-        email = request.data.get("email")
-        verification_code = request.data.get("verification_code")
-        if not email or not verification_code:
-            return Response({"error": "Email and verification code are required."}, status=status.HTTP_400_BAD_REQUEST)
-        # Verify the email and code
-        service_response = RegistrationService.verify_email(email, verification_code)
-        if "successfully" in service_response["message"]:
-            return Response(service_response, status=status.HTTP_200_OK)
-        else:
-            return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
-        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse(user_data)          
+##Bet-30##  
