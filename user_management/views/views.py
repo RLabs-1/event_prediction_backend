@@ -1,24 +1,16 @@
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from user_management.services.services import RegistrationService, UserService, JWTService
+from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
+from user_management.models.models import User
 from drf_spectacular.utils import extend_schema
-from user_management.services.services import (
-    RegistrationService,
-    UserService,
-    JWTService
-)
-from user_management.serializers.serializers import (
-    RegistrationSerializer,
-    UserUpdateSerializer,
-    UserDeactivateSerializer
-)
 from django.http import JsonResponse
-from django.shortcuts import render
 import json
 
 User = get_user_model()
-
 
 class RegistrationView(APIView):
     def post(self, request, *args, **kwargs):
@@ -29,7 +21,6 @@ class RegistrationView(APIView):
             user_service.register_user(user_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     """View for updating User details."""
@@ -43,29 +34,30 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
         user_id = self.kwargs.get('user_id')
         return generics.get_object_or_404(User, id=user_id)
 
-
 class ActivateUserView(APIView):
+    """Activates a user account."""
     def patch(self, request, user_id):
-        """Activates the user account for the given user ID."""
         service_response = UserService.activate_user(user_id)
         if service_response['success']:
             return Response(service_response, status=status.HTTP_200_OK)
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
-
 
 class UserLoginView(APIView):
     """Handles user login and returns a JWT token."""
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
+        
         if not email or not password:
             return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
         user = authenticate(email=email, password=password)
+        
         if user:
             tokens = JWTService.create_token(user)
             return Response({"refresh": tokens["refresh"], "access": tokens["access"]}, status=status.HTTP_200_OK)
+        
         return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
-
 
 class UserDeactivateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -79,16 +71,17 @@ class UserDeactivateView(APIView):
         except ValueError:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-
 class ForgotPasswordView(APIView):
     def post(self, request):
         """Initiates the password reset process."""
         email = request.data.get('email')
+        
         if not email:
             return Response({'success': False, 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         service_response = UserService.initiate_password_reset(email)
-        return Response(service_response, status=status.HTTP_200_OK if service_response['success'] else status=status.HTTP_400_BAD_REQUEST)
-
+        
+        return Response(service_response, status=status.HTTP_200_OK if service_response['success'] else status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(
     summary="Reset Forgotten Password",
@@ -120,12 +113,15 @@ class ResetForgotPasswordView(APIView):
 
         if new_password != confirm_password:
             return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             user = User.objects.get(email=email)
             if user.verification_code == '-1':
                 return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+            
             if user.is_token_expired():
                 return Response({"error": "Verification code expired"}, status=status.HTTP_410_GONE)
+            
             if user.verification_code != verification_code:
                 return Response({"error": "Invalid verification code"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -135,20 +131,42 @@ class ResetForgotPasswordView(APIView):
             user.save()
 
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+        
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class VerifyEmailView(APIView):
     """Handles email verification by verifying the provided code."""
     def post(self, request):
         email = request.data.get("email")
         verification_code = request.data.get("verification_code")
+        
         if not email or not verification_code:
             return Response({"error": "Email and verification code are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
         service_response = RegistrationService.verify_email(email, verification_code)
+        
         if "successfully" in service_response["message"]:
             return Response(service_response, status=status.HTTP_200_OK)
+        
         return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
+
+def user_register(request):
+    user_email = "raneem.dz34@gmail.com"  # We should use the registered email
+    email_service = EmailService()
+    try:
+        email_service.send_email(user_email)
+        return JsonResponse({"message": "User registered and email sent successfully!"})
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to send email: {str(e)}"}, status=500)
+
+def user_view(request):
+    """Handles requests to /api/user"""
+    user_data = {
+        'username': 'example_user',
+        'email': 'user@example.com'
+    }
+    return JsonResponse(user_data)
