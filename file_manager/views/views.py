@@ -1,4 +1,4 @@
-from file_manager.serializers.serializers import 
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, EventSystemCreateSerializer, FileSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,12 +6,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from django.conf import settings
 from core.models import EventSystem
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer
 from django.shortcuts import get_object_or_404
 import os
 from rest_framework.generics import CreateAPIView
 from core.models import EventSystem, EventStatus
-from file_manager.serializers.serializers import EventSystemCreateSerializer, FileSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
@@ -118,5 +116,20 @@ class FileRetrieveView(APIView):
             return Response(FileSerializer(file).data)
         except PermissionDenied as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+class SelectFileView(APIView):
+    """
+    View to handle the selecting of a file in an EventSystem.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, eventSystemId, fileId):
+        try:
+            EventSystemFileService.select_file(eventSystemId, fileId, request.user)
+            return Response({
+                "message": "File selected successfully"
+            }, status=status.HTTP_200_OK)
+        except (ValueError, PermissionDenied) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
