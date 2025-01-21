@@ -1,4 +1,16 @@
 from django.contrib.auth import get_user_model
+from user_management.models.models import User
+from core.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+import random
+from datetime import timedelta
+from django.utils import timezone
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 class UserService:
     @staticmethod
@@ -16,23 +28,7 @@ class UserService:
             raise ValueError('User not found.')
         except Exception as e:
             raise ValueError(f"An error occurred: {str(e)}")
-
-
-from user_management.models.models import User
-
-
-
-from core.models import User
-
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-import random
-from datetime import timedelta
-from django.utils import timezone
-from django.core.mail import send_mail
-from django.conf import settings
+        
 
 
 class UserService:
