@@ -1,3 +1,4 @@
+from file_manager.serializers.serializers import 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from django.conf import settings
 from core.models import EventSystem
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer
 from django.shortcuts import get_object_or_404
 import os
 from rest_framework.generics import CreateAPIView
@@ -15,8 +16,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 
-
-
+class EventSystemViewSet(viewsets.ModelViewSet):
+    queryset = EventSystem.objects.all()
+    serializer_class = EventSystemSerializer
+    
 class EventSystemCreateView(CreateAPIView):
     """View to create an EventSystem """
     queryset = EventSystem.objects.all()
@@ -115,4 +118,5 @@ class FileRetrieveView(APIView):
             return Response(FileSerializer(file).data)
         except PermissionDenied as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
 
