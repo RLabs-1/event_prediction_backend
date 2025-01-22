@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from file_manager.views.views import FileReferenceUpdateFileNameView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>/', FileReferenceUpdateFileNameView.as_view(), name='file-update-filename'),
+
 ]
