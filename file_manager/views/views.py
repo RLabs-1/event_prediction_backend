@@ -1,3 +1,4 @@
+from file_manager.serializers.serializers import 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from django.conf import settings
 from core.models import EventSystem
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer
 from django.shortcuts import get_object_or_404
 import os
 from rest_framework.generics import CreateAPIView
@@ -286,7 +287,7 @@ class FileRetrieveView(APIView):
         except PermissionDenied as e:
             # Handle permission denied error (e.g., user not authorized)
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
-
+          
         except NotFound as e:
             # Handle case where the file or event system is not found
             return Response({"error": "File not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -301,3 +302,4 @@ class FileRetrieveView(APIView):
                 {"error": "An unexpected error occurred while retrieving the file."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
