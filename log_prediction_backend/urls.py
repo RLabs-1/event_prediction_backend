@@ -45,6 +45,10 @@ urlpatterns = [
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),  # Reset password
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
     path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
+<<<<<<< HEAD
+    path('user_management/', include('user_management.urls')), #To make the /api/user/ being recognized by Django
+]
+=======
     path('user_management/', include('user_management.urls')),  # Include user_management URLs
     path('api/user/createEventSystem/', EventSystemCreateView.as_view(), name='create-eventsystem'),
     path('api/eventSystem/<uuid:eventSystemId>/activate', ActivateEventSystemView.as_view(), name='activate-event-system'),
@@ -53,3 +57,4 @@ urlpatterns = [
     path('api/eventSystem/<uuid:eventSystemId>/', EventSystemNameUpdateView.as_view(), name='update_event_system_name'),
     path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'),  # New Email verification endpoint
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+>>>>>>> e5be908739d8fd07f7891c1e91b965d3aa93c7cd
