@@ -127,6 +127,24 @@ class RegistrationService:
 
         return user
 
+    @staticmethod
+    def verify_email(email, verification_code):
+        """
+        Verify the user's email using the provided verification code.
+        """
+        try:
+            user = User.objects.get(email=email)
+
+            # Simulate the verification process; ideally, the code is stored in the DB or sent to the user's email
+            if verification_code == 'expected_code':  # Replace with actual verification logic
+                user.is_verified = True
+                user.save()
+                return {"message": f"Email for {email} has been successfully verified."}
+            else:
+                return {"message": "Invalid verification code."}
+        except User.DoesNotExist:
+            return {"message": "User not found!"}
+
 
 class JWTService:
     @staticmethod
