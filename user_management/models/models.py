@@ -1,39 +1,46 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils import timezone
-from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from user_management.exceptions.custom_exceptions import (
     UserNotFoundException,
     UserAlreadyExistsException,
     InvalidUserOperationException,
 )
 
-class UserManager(BaseUserManager):
-    """ Manager for the Users in the system"""
 
-    def create_user(self, email, password=None, **extra_field):
-        """Creates a user in the system"""
+class UserManager(BaseUserManager):
+    """Manager for the Users in the system"""
+
+    def create_user(self, email, password=None, **extra_fields):
+        """
+        Creates and saves a user with the given email and password.
+        """
         if not email:
             raise ValueError("Must provide an email")
-        email = self.normalize_email(email)
 
+        email = self.normalize_email(email)
         try:
-            user = self.model(email=email, **extra_field)
+            user = self.model(email=email, **extra_fields)
             user.set_password(password)
             user.save(using=self._db)
             return user
         except IntegrityError:
-            raise UserAlreadyExistsException()
+            raise UserAlreadyExistsException("A user with this email already exists.")
+        except Exception as e:
+            raise ValidationError(f"Error creating user: {str(e)}")
 
 
     def create_superuser(self, email, password=None):
         """Creates a superuser"""
-        user = self.create_user(email, password)
+        try:
+            user = self.create_user(email, password)
 
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-
+            user.is_staff = True
+            user.is_superuser = True
+            user.save(using=self._db)
+        except Exception as e:      #Taking care of errors that may occur during superuser creation.
+            raise ValidationError(f"Error creating superuser: {str(e)}")
         return user
 
 

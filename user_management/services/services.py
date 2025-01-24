@@ -1,22 +1,10 @@
-from django.contrib.auth import get_user_model
-from event_prediction_backend.core.models import User
-from event_prediction_backend.user_management.exceptions.custom_exceptions import InvalidUserOperationException, \
-    UserNotFoundException, UserInactiveException
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-import random
-from datetime import timedelta
-from django.utils import timezone
-from django.core.mail import send_mail
-from django.conf import settings
+
 
 
 class UserService:
     @staticmethod
     def deactivate_user(user_id):
         try:
-            User = get_user_model()
             user = User.objects.get(id=user_id)
             if not user.is_active:
                 raise UserInactiveException("The user is already deactivated.")
@@ -24,14 +12,15 @@ class UserService:
             user.save()
             return {"message": f"User {user.email} deactivated successfully"}
         except User.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found during deactivation.")
             raise UserNotFoundException()
         except Exception as e:
+            logger.error(f"Error occurred during deactivation of user {user_id}: {str(e)}")
             raise InvalidUserOperationException(str(e))
-
+    
     @staticmethod
     def activate_user(user_id):
         try:
-            User = get_user_model()
             user = User.objects.get(id=user_id)
             if user.is_active:
                 return {
@@ -45,35 +34,38 @@ class UserService:
                 'message': 'User activated successfully',
             }
         except User.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found during activation.")
             raise UserNotFoundException()
+        except Exception as e:
+            logger.error(f"Error occurred during activation of user {user_id}: {str(e)}")
+            raise InvalidUserOperationException(str(e))  
 
     @staticmethod
     def initiate_password_reset(email):
         try:
             user = User.objects.get(email=email)
 
-            # Generate 6-digit code
+            # Generate a 6-digit verification code
             verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
             # Set expiry to 1 hour from now
             expiry_time = timezone.now() + timedelta(hours=1)
 
-            # Update user
+            # Update user details
             user.is_password_reset_pending = True
             user.password_reset_code = verification_code
             user.password_reset_code_expiry = expiry_time
             user.save()
 
-            # Send email
+            # Send email with the reset code
             reset_url = f"{settings.DOMAIN_URL}/api/user/reset-forgot-password"
             email_body = f"""
             Your password reset verification code is: {verification_code}
-            
+
             Please visit {reset_url} to reset your password.
-            
+
             This code will expire in 1 hour.
             """
-
             send_mail(
                 'Password Reset Request',
                 email_body,
@@ -86,12 +78,15 @@ class UserService:
                 'success': True,
                 'message': 'Password reset verification code sent successfully'
             }
-
         except User.DoesNotExist:
-            return {
-                'success': False,
-                'message': 'No user found with this email address'
-            }
+            logger.error(f"User with email {email} not found during password reset.")
+            raise UserNotFoundException()
+        except SMTPException as e:
+            logger.error(f"Error sending password reset email to {email}: {str(e)}")
+            raise InvalidUserOperationException(f"Error sending email: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error during password reset for {email}: {str(e)}")
+            raise InvalidUserOperationException(str(e))
 
 
 class RegistrationService:
@@ -107,6 +102,24 @@ class RegistrationService:
         user.save()
 
         return user
+
+    @staticmethod
+    def verify_email(email, verification_code):
+        """
+        Verify the user's email using the provided verification code.
+        """
+        try:
+            user = User.objects.get(email=email)
+
+            # Simulate the verification process; ideally, the code is stored in the DB or sent to the user's email
+            if verification_code == 'expected_code':  # Replace with actual verification logic
+                user.is_verified = True
+                user.save()
+                return {"message": f"Email for {email} has been successfully verified."}
+            else:
+                return {"message": "Invalid verification code."}
+        except User.DoesNotExist:
+            return {"message": "User not found!"}
 
 
 class JWTService:

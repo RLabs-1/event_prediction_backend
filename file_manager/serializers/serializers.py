@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import FileReference, EventSystem
+from core.models import EventSystem, FileReference
 
 class EventSystemCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,7 +15,6 @@ class FileReferenceSerializer(serializers.ModelSerializer):
         model = FileReference
         fields = '__all__'  # Include all fields or specify them explicitly
 
-
 class EventSystemSerializer(serializers.ModelSerializer):
     """
         Serializer for the EventSystem model.
@@ -23,3 +22,9 @@ class EventSystemSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventSystem # Include all fields or specify them explicitly
         fields = '__all__'
+
+class EventSystemNameUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventSystem
+        fields = ['name']  # Only allow updating the name field        
+
