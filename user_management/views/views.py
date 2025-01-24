@@ -13,6 +13,12 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import json
 from ..services.email_service import EmailService
+from user_management.exceptions.custom_exceptions import (
+    UserNotFoundException,
+    UserAlreadyExistsException,
+    UserInactiveException,
+    InvalidUserOperationException,
+)
 
 
 class UserDeactivateView(APIView):
@@ -23,11 +29,17 @@ class UserDeactivateView(APIView):
         Deactivate a user by their ID.
         """
         try:
+            # Attempt to deactivate the user
             user = UserService.deactivate_user(userId)
+            # Serialize the user data for successful response
             serializer = UserDeactivateSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except ValueError:
+        except UserNotFoundException:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except UserInactiveException as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidUserOperationException as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 User = get_user_model()
 
