@@ -1,26 +1,24 @@
 from django.contrib.auth import get_user_model
-from user_management.models.models import User
-from core.models import User
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.tokens import AccessToken
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-import random
-from datetime import timedelta
-from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
 from smtplib import SMTPException
+import random
 import logging
+from datetime import timedelta
+from django.utils import timezone
 
-
-# Set up logger in order to track Errors in User Management
+# Set up logger to track errors in User Management
 logger = logging.getLogger(__name__)
+
+User = get_user_model()  # Ensure we are using the correct User model
 
 class UserService:
     @staticmethod
     def deactivate_user(user_id):
         try:
-            User = get_user_model()
             user = User.objects.get(id=user_id)
             if user.is_active:
                 user.is_active = False
@@ -34,8 +32,6 @@ class UserService:
         except Exception as e:
             logger.error(f"Error occurred during deactivation of user {user_id}: {str(e)}")
             raise ValueError(f"An error occurred: {str(e)}")
-
-
 
 class UserService:
     @staticmethod
@@ -137,6 +133,24 @@ class RegistrationService:
         user.save()
 
         return user
+
+    @staticmethod
+    def verify_email(email, verification_code):
+        """
+        Verify the user's email using the provided verification code.
+        """
+        try:
+            user = User.objects.get(email=email)
+
+            # Simulate the verification process; ideally, the code is stored in the DB or sent to the user's email
+            if verification_code == 'expected_code':  # Replace with actual verification logic
+                user.is_verified = True
+                user.save()
+                return {"message": f"Email for {email} has been successfully verified."}
+            else:
+                return {"message": "Invalid verification code."}
+        except User.DoesNotExist:
+            return {"message": "User not found!"}
 
 
 class JWTService:
