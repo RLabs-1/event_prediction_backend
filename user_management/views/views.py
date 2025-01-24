@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService
-from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
+from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer , UserDeactivateSerializer
 from user_management.models.models import User
 from core.models import User
 from drf_spectacular.utils import extend_schema
