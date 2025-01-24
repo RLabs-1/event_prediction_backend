@@ -167,7 +167,72 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
+# Logging configuration
+
+LOGGING = {
+
+    'version': 1,
+
+    'disable_existing_loggers': False,
+
+    'handlers': {
+
+        'console': {
+
+            'level': 'ERROR',  # You can change this to 'DEBUG' or 'INFO' for more detailed logs
+
+            'class': 'logging.StreamHandler',  # Logs to console
+
+        },
+
+        'file': {
+
+            'level': 'ERROR',  # You can change this to 'DEBUG' or 'INFO' for more detailed logs
+
+            'class': 'logging.FileHandler',
+
+            'filename': os.path.join(BASE_DIR, 'error.log'),  # Path to log file
+
+        },
+
+    },
+
+    'loggers': {
+
+        'django': {
+
+            'handlers': ['console', 'file'],  # Output logs to both console and file
+
+            'level': 'ERROR',  # Change to 'DEBUG' or 'INFO' if more logs are needed
+
+            'propagate': True,
+
+        },
+
+        'user_management': {
+
+            'handlers': ['console', 'file'],
+
+            'level': 'ERROR',
+
+            'propagate': False,  # Prevent logs from propagating to higher-level loggers
+
+        },
+
+    },
+
+}
+
+
+
+
+
+# Try importing local settings if available
+
 try:
-   from .local import *
+
+    from .local import *
+
 except ImportError:
-   pass
+
+    pass
