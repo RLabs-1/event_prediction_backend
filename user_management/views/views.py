@@ -14,6 +14,7 @@ from django.http import JsonResponse
 import json
 from ..services.email_service import EmailService
 
+
 class UserDeactivateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -93,19 +94,23 @@ class ForgotPasswordView(APIView):
         """
         Initiates the password reset process for a user
         """
+
         email = request.data.get('email')
-        
+
         if not email:
             return Response({
-                'success': False,
-                'message': 'Email is required'
+                'error': 'Email is required'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        service_response = UserService.initiate_password_reset(email)
-        
-        if service_response['success']:
+
+        try:
+            service_response = UserService.initiate_password_reset(email)
+
             return Response(service_response, status=status.HTTP_200_OK)
-        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as ve:
+            return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': 'Unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @extend_schema(
     summary="Reset Forgotten Password",
