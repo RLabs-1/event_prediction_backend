@@ -4,24 +4,36 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import UpdateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import IsAuthenticated
 from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemCreateSerializer
 from django.conf import settings
 from core.models import EventSystem, FileReference
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, FileReferenceSerializer
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied
+from core.models import EventSystem, EventStatus
 import os
+
 from rest_framework.generics import CreateAPIView
 from core.models import EventSystem, EventStatus
 from file_manager.serializers.serializers import EventSystemCreateSerializer, FileReferenceSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
+import aiofiles
+
+from core.models import EventSystem
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer
+
+from file_manager.serializers.serializers import FileReferenceSerializer
+from file_manager.serializers.serializers import EventSystemCreateSerializer, FileReferenceSerializer
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import APIException, ValidationError, NotFound
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.views import exception_handler
 from django.core.exceptions import ObjectDoesNotExist
+
 
 class EventSystemCreateView(CreateAPIView):
     """View to create an EventSystem"""
@@ -185,16 +197,21 @@ class DeselectFileView(APIView):
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
-    def post(self, request, eventSystemId):
-        try:
-            # Check if a file is provided in the request
-            file = request.FILES.get('file')
-            if not file:
-                raise ValidationError("No file provided.")
+    async def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Extract file details
-            filename = file.name
-            file_path = os.path.join(settings.MEDIA_ROOT, filename)
+        # Extract file details
+        filename = file.name
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+
+        # Use aiofiles to handle file operations asynchronously
+        async with aiofiles.open(file_path, 'wb+') as destination:
+            # Iterate through the file chunks and write asynchronously
+            for chunk in file.chunks():
+                await destination.write(chunk)
 
             # Save the file to the media directory
             with open(file_path, 'wb+') as destination:
@@ -232,6 +249,7 @@ class FileUploadView(APIView):
                 {'error': 'An unexpected error occurred during file upload. Please try again later.'+str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class EventSystemNameUpdateView(APIView):
     """
