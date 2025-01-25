@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView,EventSystemNameUpdateView ,FileRetrieveView
+from file_manager.views.views import FileReferenceUpdateFileNameView, DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView,EventSystemNameUpdateView ,FileRetrieveView
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView,
 )
@@ -34,6 +34,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>/', FileReferenceUpdateFileNameView.as_view(), name='file-update-filename'),
     path('api/user/<int:userId>/deactivate', UserDeactivateView.as_view(), name='deactivate-user'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
@@ -45,10 +46,6 @@ urlpatterns = [
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),  # Reset password
     path('api/eventSystem/<int:eventSystemId>/file/<int:fileId>/deselect', DeselectFileView.as_view(), name='deselect-file'),
     path('api/eventSystem/<int:eventSystemId>/uploadFile', FileUploadView.as_view(), name='upload-file'),
-<<<<<<< HEAD
-    path('user_management/', include('user_management.urls')), #To make the /api/user/ being recognized by Django
-]
-=======
     path('user_management/', include('user_management.urls')),  # Include user_management URLs
     path('api/user/createEventSystem/', EventSystemCreateView.as_view(), name='create-eventsystem'),
     path('api/eventSystem/<uuid:eventSystemId>/activate', ActivateEventSystemView.as_view(), name='activate-event-system'),
@@ -57,4 +54,4 @@ urlpatterns = [
     path('api/eventSystem/<uuid:eventSystemId>/', EventSystemNameUpdateView.as_view(), name='update_event_system_name'),
     path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'),  # New Email verification endpoint
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
->>>>>>> e5be908739d8fd07f7891c1e91b965d3aa93c7cd
+

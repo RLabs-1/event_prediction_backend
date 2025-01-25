@@ -2,16 +2,25 @@ from file_manager.serializers.serializers import
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import UpdateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemCreateSerializer
 from django.conf import settings
+from core.models import EventSystem, FileReference
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, FileReferenceSerializer
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
 from core.models import EventSystem, EventStatus
 import os
+
+from rest_framework.generics import CreateAPIView
+from core.models import EventSystem, EventStatus
+from file_manager.serializers.serializers import EventSystemCreateSerializer, FileReferenceSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication
 import aiofiles
 
 from core.models import EventSystem
@@ -23,6 +32,8 @@ from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import APIException, ValidationError, NotFound
 from rest_framework.views import exception_handler
+from django.core.exceptions import ObjectDoesNotExist
+
 
 class EventSystemCreateView(CreateAPIView):
     """View to create an EventSystem"""
@@ -149,6 +160,7 @@ class EventSystemFileView(APIView):
                 {"error": "An unexpected error occurred. Please try again later."+str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class DeselectFileView(APIView):
     """
@@ -315,6 +327,37 @@ class FileRetrieveView(APIView):
         return Response({'message': 'File uploaded successfully', 'file_url': file_url}, status=status.HTTP_201_CREATED)
 
 
+class FileReferenceUpdateFileNameView(UpdateAPIView):
+    queryset = FileReference.objects.all()
+    serializer_class = FileReferenceSerializer
+    lookup_field = 'id'  # The field to use for lookup
+    lookup_url_kwarg = 'fileId'  # The URL keyword argument for fileId
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def partial_update(self, request, *args, **kwargs):
+        try:
+            # Access eventSystemId from the URL (if needed)
+            event_system_id = kwargs.get('eventSystemId')
+            # Access fileId from the URL
+            file_id = kwargs.get('fileId')
+            # Get the FileReference object
+            instance = self.get_object()
+            
+            # Validate and update the file_name
+            new_file_name = request.data.get('file_name')
+            if not new_file_name or len(new_file_name.strip()) == 0:
+                return Response({"error": "file_name is required and cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+
+            instance.file_name = new_file_name
+            instance.save()
+
+            # Serialize and return the updated data
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+
+        except ObjectDoesNotExist:
+            return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class EventSystemFileListView(APIView):
     """
