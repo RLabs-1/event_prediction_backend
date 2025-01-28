@@ -53,5 +53,7 @@ urlpatterns = [
     path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>',FileRetrieveView.as_view(),name='get-event-system-file'),
     path('api/eventSystem/<uuid:eventSystemId>/', EventSystemNameUpdateView.as_view(), name='update_event_system_name'),
     path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'),  # New Email verification endpoint
+
+    path('', include('file_manager.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -1,4 +1,4 @@
-from file_manager.serializers.serializers import 
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, EventSystemCreateSerializer, FileSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,8 +9,11 @@ from rest_framework.permissions import IsAuthenticated
 from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemCreateSerializer
 from django.conf import settings
+from core.models import EventSystem
+
 from core.models import EventSystem, FileReference
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, FileReferenceSerializer
+
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
 from core.models import EventSystem, EventStatus
@@ -18,7 +21,7 @@ import os
 
 from rest_framework.generics import CreateAPIView
 from core.models import EventSystem, EventStatus
-from file_manager.serializers.serializers import EventSystemCreateSerializer, FileReferenceSerializer
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 import aiofiles
@@ -312,6 +315,23 @@ class FileRetrieveView(APIView):
             # Handle case where the file or event system is not found
             return Response({"error": "File not found."}, status=status.HTTP_404_NOT_FOUND)
 
+
+class SelectFileView(APIView):
+    """
+    View to handle the selecting of a file in an EventSystem.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, eventSystemId, fileId):
+        try:
+            EventSystemFileService.select_file(eventSystemId, fileId, request.user)
+            return Response({
+                "message": "File selected successfully"
+            }, status=status.HTTP_200_OK)
+        except (ValueError, PermissionDenied) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
         except ValueError as e:
             # Handle invalid parameter errors (e.g., invalid fileId or eventSystemId)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -376,4 +396,5 @@ class EventSystemFileListView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except EventSystem.DoesNotExist:
             return Response({"detail": "EventSystem not found"}, status=status.HTTP_404_NOT_FOUND)
+
 

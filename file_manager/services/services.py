@@ -24,6 +24,25 @@ class EventSystemFileService:
             raise Exception(f"An unexpected error occurred: {str(e)}")
 
 
+    @staticmethod
+    def select_file(event_system_id, file_id, user):
+        """
+        Select a file in an EventSystem
+        """
+        event_system = get_object_or_404(EventSystem, uuid=event_system_id)
+        file = get_object_or_404(File, uuid=file_id)
+        
+        if not event_system.can_user_modify(user):
+            raise PermissionDenied("User does not have permission to modify this event system")
+        
+        if file not in event_system.files.all():
+            raise ValueError("File does not belong to this event system")
+        
+        file.is_selected = True
+        file.save()
+        
+        return file
+
 class EventSystemService:
     @staticmethod
     def create_event_system(name, user):
