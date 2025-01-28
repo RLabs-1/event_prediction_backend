@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService
-from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
+from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer , UserDeactivateSerializer
 from user_management.models.models import User
 from core.models import User
 from drf_spectacular.utils import extend_schema
@@ -13,6 +13,13 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import json
 from ..services.email_service import EmailService
+from user_management.exceptions.custom_exceptions import (
+    UserNotFoundException,
+    UserAlreadyExistsException,
+    UserInactiveException,
+    InvalidUserOperationException,
+)
+
 
 class UserDeactivateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -22,11 +29,17 @@ class UserDeactivateView(APIView):
         Deactivate a user by their ID.
         """
         try:
+            # Attempt to deactivate the user
             user = UserService.deactivate_user(userId)
+            # Serialize the user data for successful response
             serializer = UserDeactivateSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except ValueError:
+        except UserNotFoundException:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except UserInactiveException as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidUserOperationException as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 User = get_user_model()
 
@@ -93,19 +106,23 @@ class ForgotPasswordView(APIView):
         """
         Initiates the password reset process for a user
         """
+
         email = request.data.get('email')
-        
+
         if not email:
             return Response({
-                'success': False,
-                'message': 'Email is required'
+                'error': 'Email is required'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        service_response = UserService.initiate_password_reset(email)
-        
-        if service_response['success']:
+
+        try:
+            service_response = UserService.initiate_password_reset(email)
+
             return Response(service_response, status=status.HTTP_200_OK)
-        return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as ve:
+            return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': 'Unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @extend_schema(
     summary="Reset Forgotten Password",

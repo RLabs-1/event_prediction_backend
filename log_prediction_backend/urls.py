@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from file_manager.views.views import DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView,EventSystemNameUpdateView ,FileRetrieveView
+from file_manager.views.views import FileReferenceUpdateFileNameView, DeselectFileView, FileUploadView, EventSystemCreateView, ActivateEventSystemView, DeactivateEventSystemView,EventSystemNameUpdateView ,FileRetrieveView
 from drf_spectacular.views import (
     SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView,
 )
@@ -34,6 +34,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>/', FileReferenceUpdateFileNameView.as_view(), name='file-update-filename'),
     path('api/user/<int:userId>/deactivate', UserDeactivateView.as_view(), name='deactivate-user'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # Schema
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
@@ -52,5 +53,7 @@ urlpatterns = [
     path('api/eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>',FileRetrieveView.as_view(),name='get-event-system-file'),
     path('api/eventSystem/<uuid:eventSystemId>/', EventSystemNameUpdateView.as_view(), name='update_event_system_name'),
     path('api/user/verifyEmail/', VerifyEmailView.as_view(), name='verify-email'),  # New Email verification endpoint
+
     path('', include('file_manager.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
