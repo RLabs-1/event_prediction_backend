@@ -8,6 +8,7 @@ pyvenv.cfg
 */migrations
 /venv
 .venv
+local.py
 
 #Compiled Files
 __pycache__/
