@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',  # Add Spectacular for Open api
     'core',
+    'UserSystemPermissions',
 ]
 
 AUTH_USER_MODEL = 'core.User'
