@@ -2,6 +2,9 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from datetime import timedelta
 from django.utils import timezone
+from django.dispatch import receiver
+from django.db.models.signals import post_save, m2m_changed
+from loguru import logger
 import uuid
 
 class UserManager(BaseUserManager):
@@ -107,9 +110,10 @@ class FileReference(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     #The name of the file as it was uploaded or renamed.
     file_name = models.CharField(max_length=255)
+    
     #The URL where the file is stored or can be accessed.
     url = models.URLField(max_length=500)
-
+    
     #Storage Provider (ENUM)
     class StorageProvider(models.TextChoices):
         """
@@ -179,7 +183,7 @@ class EventStatus(models.TextChoices):
 class EventSystem(models.Model):
     #A CharField for the name of the EventSystem.
     name = models.CharField(max_length=255)
-
+    
     #A unique identifier for each instance, generated using Python's uuid module.
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
@@ -207,3 +211,49 @@ class EventSystem(models.Model):
 
     def __str__(self):
         return self.name
+    
+@receiver(post_save, sender=EventSystem)
+def log_event_system_changes(sender, instance, created, **kwargs):
+    try:
+        if created:
+            logger.debug(f"EventSystem '{instance.name}' was created with UUID {instance.uuid}.")
+        else:
+            logger.debug(f"EventSystem '{instance.name}' with UUID {instance.uuid} was updated.")
+
+        if instance.status == "INVALID":
+            logger.critical(f"EventSystem '{instance.name}' has entered an invalid state! Immediate attention required.")
+    except Exception as e:
+        logger.error(f"An error occurred while handling EventSystem '{instance.name}': {str(e)}")
+        logger.critical(f"Critical failure in EventSystem '{instance.name}'. Immediate attention required!")
+
+@receiver(m2m_changed, sender=EventSystem.file_objects.through)
+def log_file_objects_changes(sender, instance, action, pk_set, **kwargs):
+    try:
+        if pk_set:
+            files = FileReference.objects.filter(id__in=pk_set)
+            file_names = [file.file_name for file in files]
+            if action == "post_add":
+                logger.info(f"File objects '{', '.join(file_names)}' were added to EventSystem '{instance.name}'.")
+            elif action == "post_remove":
+                logger.warning(f"File objects '{', '.join(file_names)}' were removed from EventSystem '{instance.name}'.")
+        else:
+            logger.debug(f"No file objects were affected in action '{action}' for EventSystem '{instance.name}'.")
+    except Exception as e:
+        logger.error(f"Error during file object change in EventSystem '{instance.name}': {str(e)}")
+        logger.critical("Unexpected failure during file object changes. Investigation required.")
+
+@receiver(m2m_changed, sender=EventSystem.users.through)
+def log_user_changes(sender, instance, action, pk_set, **kwargs):
+    try:
+        if pk_set:
+            users = User.objects.filter(id__in=pk_set)
+            user_names = [user.username for user in users]
+            if action == "post_add":
+                logger.info(f"Users '{', '.join(user_names)}' were added to EventSystem '{instance.name}'.")
+            elif action == "post_remove":
+                logger.warning(f"Users '{', '.join(user_names)}' were removed from EventSystem '{instance.name}'.")
+        else:
+            logger.debug(f"No user changes for EventSystem '{instance.name}' during action '{action}'.")
+    except Exception as e:
+        logger.error(f"Error during user association in EventSystem '{instance.name}': {str(e)}")
+        logger.critical("Unexpected failure during user changes. Immediate review required.")
