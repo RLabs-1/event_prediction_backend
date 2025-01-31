@@ -2,14 +2,12 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.test import TestCase
-from unittest.mock import patch
 from user_management.services.email_service import EmailService
-from django.urls import reverse
 from unittest.mock import patch
-from django.http import JsonResponse
-from user_management.views.views import user_register
-import random
+
 import string
+from django.urls import reverse
+
 
 class UserLoginViewTest(TestCase):
 

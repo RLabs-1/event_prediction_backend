@@ -30,7 +30,7 @@ class EventSystemFileService:
         Select a file in an EventSystem
         """
         event_system = get_object_or_404(EventSystem, uuid=event_system_id)
-        file = get_object_or_404(File, uuid=file_id)
+        file = get_object_or_404(FileReference, uuid=file_id)
         
         if not event_system.can_user_modify(user):
             raise PermissionDenied("User does not have permission to modify this event system")
