@@ -9,6 +9,7 @@ from user_management.exceptions.custom_exceptions import (
 from core.models import User
 
 
+
 class UserExceptionTestCase(TestCase):
     def test_user_not_found_exception(self):
         """Test that UserNotFoundException is raised when a user is not found"""
