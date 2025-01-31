@@ -6,7 +6,7 @@ from user_management.exceptions.custom_exceptions import (
     UserInactiveException,
     InvalidUserOperationException,
 )
-from user_management.models.models import User
+from core.models import User
 
 
 class UserExceptionTestCase(TestCase):

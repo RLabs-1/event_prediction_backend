@@ -4,7 +4,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': '147258magd',
+        'PASSWORD': 'adankh313',
         'HOST': 'localhost',
         'PORT': '5432',
     }

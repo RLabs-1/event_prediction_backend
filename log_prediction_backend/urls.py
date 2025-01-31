@@ -40,7 +40,7 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Swagger
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),  # redocUI
     path('api/user/register/', RegistrationView.as_view(), name='user-register'),  # User registration
-    path('api/user/<int:user_id>/', UserUpdateView.as_view(), name='user-update'),  # Updating User Details
+    path('api/user/<uuid:user_id>/', UserUpdateView.as_view(), name='user-update'),  # Updating User Details
     path('api/user/<int:userId>/activate', ActivateUserView.as_view(), name='activate-user'),  # Endpoint to activate the user
     path('api/user/login', UserLoginView.as_view(), name='user-login'),  # Login endpoint
     path('api/user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),  # Reset password

@@ -1,4 +1,4 @@
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, EventSystemCreateSerializer, FileSerializer
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, EventSystemCreateSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -228,30 +228,30 @@ class FileUploadView(APIView):
                 status=status.HTTP_201_CREATED
             )
 
-        except ValidationError as e:
-            # Handle validation errors
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        except PermissionError:
-            # Handle permission errors when saving the file
-            return Response(
-                {'error': 'Permission denied while saving the file. Check server permissions.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        except FileExistsError:
-            # Handle cases where a file with the same name already exists
-            return Response(
-                {'error': 'A file with the same name already exists. Please use a unique filename.'},
-                status=status.HTTP_409_CONFLICT
-            )
-
-        except Exception as e:
-            # Handle all unexpected errors
-            return Response(
-                {'error': 'An unexpected error occurred during file upload. Please try again later.'+str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        # except ValidationError as e:
+        #     # Handle validation errors
+        #     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # except PermissionError:
+        #     # Handle permission errors when saving the file
+        #     return Response(
+        #         {'error': 'Permission denied while saving the file. Check server permissions.'},
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
+        #
+        # except FileExistsError:
+        #     # Handle cases where a file with the same name already exists
+        #     return Response(
+        #         {'error': 'A file with the same name already exists. Please use a unique filename.'},
+        #         status=status.HTTP_409_CONFLICT
+        #     )
+        #
+        # except Exception as e:
+        #     # Handle all unexpected errors
+        #     return Response(
+        #         {'error': 'An unexpected error occurred during file upload. Please try again later.'+str(e)},
+        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        #     )
 
 
 class EventSystemNameUpdateView(APIView):
