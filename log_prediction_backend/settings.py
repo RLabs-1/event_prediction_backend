@@ -77,23 +77,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db',
-        'USER': 'postgres',
-        'PASSWORD': '147258magd',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
