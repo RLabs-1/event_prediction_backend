@@ -1,4 +1,3 @@
-from file_manager.serializers.serializers import 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,10 +8,9 @@ from core.models import EventSystem
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer
 from django.shortcuts import get_object_or_404
 import os
-<<<<<<< HEAD
 from core.models import EventSystem
 from file_manager.serializers.serializers import FileReferenceSerializer
-=======
+
 from rest_framework.generics import CreateAPIView
 from core.models import EventSystem, EventStatus
 from file_manager.serializers.serializers import EventSystemCreateSerializer, FileReferenceSerializer
@@ -151,7 +149,7 @@ class EventSystemFileView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
->>>>>>> e5be908739d8fd07f7891c1e91b965d3aa93c7cd
+
 
 class DeselectFileView(APIView):
     """
@@ -308,7 +306,7 @@ class FileRetrieveView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-<<<<<<< HEAD
+
         file_url = settings.MEDIA_URL + filename
         return Response({'message': 'File uploaded successfully', 'file_url': file_url}, status=status.HTTP_201_CREATED)
 
@@ -331,5 +329,5 @@ class EventSystemFileListView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except EventSystem.DoesNotExist:
             return Response({"detail": "EventSystem not found"}, status=status.HTTP_404_NOT_FOUND)
-=======
->>>>>>> e5be908739d8fd07f7891c1e91b965d3aa93c7cd
+
+
