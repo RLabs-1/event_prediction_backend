@@ -1,4 +1,3 @@
-from file_manager.serializers.serializers import 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -198,32 +197,32 @@ class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     async def post(self, request):
-        file = request.FILES.get('file')
-        if not file:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            file = request.FILES.get('file')
+            if not file:
+                return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Extract file details
-        filename = file.name
-        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+            # Extract file details
+            filename = file.name
+            file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-
-        # Use aiofiles to handle file operations asynchronously
-        async with aiofiles.open(file_path, 'wb+') as destination:
-            # Iterate through the file chunks and write asynchronously
-            for chunk in file.chunks():
-                await destination.write(chunk)
-
-            # Save the file to the media directory
-            with open(file_path, 'wb+') as destination:
+            # Use aiofiles to handle file operations asynchronously
+            async with aiofiles.open(file_path, 'wb+') as destination:
+                # Iterate through the file chunks and write asynchronously
                 for chunk in file.chunks():
-                    destination.write(chunk)
+                    await destination.write(chunk)
 
-            # Generate file URL for the response
-            file_url = settings.MEDIA_URL + filename
-            return Response(
-                {'message': 'File uploaded successfully', 'file_url': file_url},
-                status=status.HTTP_201_CREATED
-            )
+                # Save the file to the media directory
+                with open(file_path, 'wb+') as destination:
+                    for chunk in file.chunks():
+                        destination.write(chunk)
+
+                # Generate file URL for the response
+                file_url = settings.MEDIA_URL + filename
+                return Response(
+                    {'message': 'File uploaded successfully', 'file_url': file_url},
+                    status=status.HTTP_201_CREATED
+                )
 
         except ValidationError as e:
             # Handle validation errors
