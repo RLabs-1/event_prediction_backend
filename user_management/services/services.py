@@ -9,6 +9,13 @@ import random
 import logging
 from datetime import timedelta
 from django.utils import timezone
+from user_management.exceptions.custom_exceptions import (
+    UserNotFoundException,
+    UserAlreadyExistsException,
+    UserInactiveException,
+    InvalidUserOperationException,
+)
+from .email_service import EmailService
 
 # Set up logger to track errors in User Management
 logger = logging.getLogger(__name__)
@@ -55,111 +62,140 @@ class UserService:
     @staticmethod
     def activate_user(user_id):
         try:
-            user = UserService.get_user_by_id(user_id)
-            if user.is_active:
-                return {
-                    'success': False,
-                    'message': 'User is already active',
-                }
+            user = User.objects.get(id=user_id)
+            
+            # Always allow activation
             user.is_active = True
             user.save()
+            
             return {
                 'success': True,
-                'message': 'User activated successfully',
+                'message': 'User activated successfully'
             }
+            
         except User.DoesNotExist:
-            raise UserNotFoundException()
-        except Exception as e:
-            logger.error(f"Error occurred during activation of user {user_id}: {str(e)}")
-            raise InvalidUserOperationException(str(e))
+            raise UserNotFoundException(f"User with ID {user_id} not found")
+
+    @staticmethod
+    def verify_code(email, verification_code):
+        """
+        Verify if the provided code matches the stored code for the user
+        and hasn't expired
+        """
+        try:
+            user = User.objects.get(email=email)
+            stored_code = user.verification_code
+            code_timestamp = user.token_time_to_live
+
+            # Check if code exists and matches
+            if not stored_code or stored_code != verification_code:
+                return False
+
+            # Check if code has expired (e.g., after 15 minutes)
+            if not code_timestamp or (timezone.now() - code_timestamp).total_seconds() > 900:  # 15 minutes
+                return False
+
+            return True
+
+        except User.DoesNotExist:
+            return False
+
+    @staticmethod
+    def reset_password(email, verification_code, new_password, confirm_password):
+        try:
+            # 1. Verify passwords match
+            if new_password != confirm_password:
+                raise ValueError("Passwords do not match")
+                
+            # 2. Validate password strength
+            if not UserService.is_password_strong(new_password):
+                raise ValueError("Password must be at least 8 characters long and contain uppercase, lowercase, numbers and special characters")
+                
+            # 3. Verify code
+            if not UserService.verify_code(email, verification_code):
+                raise ValueError("Invalid or expired verification code")
+                
+            # 4. Update password
+            user = User.objects.get(email=email)
+            user.set_password(new_password)
+            # Clear the verification code after successful reset
+            user.verification_code = None
+            user.token_time_to_live = None
+            user.save()
+            
+            return {
+                "message": "Password reset successfully"
+            }
+            
+        except User.DoesNotExist:
+            raise ValueError("No user found with this email address")
 
     @staticmethod
     def initiate_password_reset(email):
         try:
+            # Find user
             user = User.objects.get(email=email)
-
-            # Check if a password reset is already in progress
-            if user.is_password_reset_pending and user.password_reset_code_expiry > timezone.now():
-                raise InvalidUserOperationException("A password reset is already in progress.")
-
-            # Generate a 6-digit verification code
+            
+            # Generate verification code
             verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-
-            # Set expiry to 1 hour from now
-            expiry_time = timezone.now() + timedelta(hours=1)
-
-            # Update user details
-            user.is_password_reset_pending = True
-            user.password_reset_code = verification_code
-            user.password_reset_code_expiry = expiry_time
+            
+            # Log the code (for debugging)
+            print(f"Generated code for {email}: {verification_code}")
+            
+            # Save verification code and set expiry
+            user.verification_code = verification_code
+            user.token_time_to_live = timezone.now()
             user.save()
-
-            # Send email with the reset code
-            reset_url = f"{settings.DOMAIN_URL}/api/user/reset-forgot-password"
-            email_body = f"""
-            Your password reset verification code is: {verification_code}
-
-            Please visit {reset_url} to reset your password.
-
-            This code will expire in 1 hour.
-            """
-            send_mail(
-                'Password Reset Request',
-                email_body,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+            
+            # Log stored code (for debugging)
+            stored_user = User.objects.get(email=email)
+            print(f"Stored code in DB: {stored_user.verification_code}")
+            
+            # Send email with verification code
+            EmailService.send_password_reset_email(
+                email=email,
+                verification_code=verification_code
             )
-
+            
             return {
-                'success': True,
-                'message': 'Password reset verification code sent successfully'
+                "message": "Password reset email sent successfully"
             }
+            
         except User.DoesNotExist:
-            logger.error(f"User with email {email} not found during password reset.")
-            raise UserNotFoundException()
-        except SMTPException as e:
-            logger.error(f"Error sending password reset email to {email}: {str(e)}")
-            raise InvalidUserOperationException(f"Error sending email: {str(e)}")
-        except Exception as e:
-            logger.error(f"Unexpected error during password reset for {email}: {str(e)}")
-            raise InvalidUserOperationException(str(e))
+            raise ValueError("No user found with this email address")
+
+    @staticmethod
+    def is_password_strong(password):
+       """
+       Simple password validation
+      - At least 4 characters long
+       """
+       return len(password) >= 4
 
 
 class RegistrationService:
-    @staticmethod
-    def register_user(validated_data):
+    def register_user(self, user_data):
+        """
+        Register a new user with is_active=True by default.
+        """
         try:
-            user = User(
-                email=validated_data['email'],
-                name=validated_data['name'],
-                is_active=True,
-                is_staff=False
+            # Check if user already exists
+            if User.objects.filter(email=user_data['email']).exists():
+                raise UserAlreadyExistsException()
+
+            # Create user with is_active=True since we don't need verification
+            user = User.objects.create_user(
+                email=user_data['email'],
+                password=user_data['password'],
+                name=user_data.get('name', ''),
+                is_active=True  # Set is_active to True since no verification needed
             )
-            user.set_password(validated_data['password'])
-            user.save()
+            
             return user
+
         except Exception as e:
-            logger.error(f"Error occurred during user registration: {str(e)}")
-            raise InvalidUserOperationException("Error during user registration.")
-
-    @staticmethod
-    def verify_email(email, verification_code):
-        """
-        Verify the user's email using the provided verification code.
-        """
-        try:
-            user = User.objects.get(email=email)
-
-            # Simulate the verification process; ideally, the code is stored in the DB or sent to the user's email
-            if verification_code == 'expected_code':  # Replace with actual verification logic
-                user.is_verified = True
-                user.save()
-                return {"message": f"Email for {email} has been successfully verified."}
-            else:
-                return {"message": "Invalid verification code."}
-        except User.DoesNotExist:
-            return {"message": "User not found!"}
+            logger.error(f"Error in user registration: {str(e)}")
+            raise InvalidUserOperationException(str(e))
 
 
 class JWTService:

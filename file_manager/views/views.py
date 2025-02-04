@@ -32,45 +32,117 @@ from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import APIException, ValidationError, NotFound
 from rest_framework.views import exception_handler
 from django.core.exceptions import ObjectDoesNotExist
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter, OpenApiTypes
+from django.http import FileResponse
 
 
-class EventSystemCreateView(CreateAPIView):
+class EventSystemCreateView(APIView):
     """View to create an EventSystem"""
-    queryset = EventSystem.objects.all()
-    serializer_class = EventSystemCreateSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def perform_create(self, serializer):
-        """Use the EventSystemService to handle the creation logic."""
+    permission_classes = [IsAuthenticated]  # Requires authentication
+    
+    @extend_schema(
+        tags=['file manager'],
+        description='Create a new event system. User must be authenticated.',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string', 'description': 'Name of the event system'},
+                },
+                'required': ['name']
+            }
+        },
+        responses={
+            201: {
+                'description': 'Event system created successfully',
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'string', 'format': 'uuid'},
+                    'name': {'type': 'string'},
+                    'message': {'type': 'string'}
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+        },
+        examples=[
+            OpenApiExample(
+                'Create Example',
+                value={
+                    'name': 'My Event System'
+                },
+                request_only=True
+            )
+        ]
+    )
+    def post(self, request):
+        """Create a new event system for the authenticated user."""
         try:
-            name = serializer.validated_data['name']
-            EventSystemService.create_event_system(name=name, user=self.request.user)
-        except ValidationError as e:
-            # Raise validation errors to match serializer errors
-            raise ValidationError({'error': str(e)})
-        except Exception as e:
-            # Catch all unexpected errors and log them
-            raise APIException({'error': 'An unexpected error occurred. Please try again later.'+ str(e)})
+            name = request.data.get('name')
+            if not name:
+                return Response(
+                    {"error": "Name is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-    def create(self, request, *args, **kwargs):
-        """Override the create method to handle response format for errors."""
-        try:
-            return super().create(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({'error': e.detail}, status=status.HTTP_400_BAD_REQUEST)
-        except APIException as e:
-            return Response({'error': e.detail}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Create event system and associate with user
+            event_system = EventSystem.objects.create(name=name)
+            event_system.users.add(request.user)
+
+            return Response({
+                'id': event_system.uuid,
+                'name': event_system.name,
+                'message': 'Event system created successfully'
+            }, status=status.HTTP_201_CREATED)
+
         except Exception as e:
-            # For unexpected exceptions
             return Response(
-                {'error': 'Something went wrong. Please contact support.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
 
 class ActivateEventSystemView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        tags=['file manager'],
+        description='Activate an EventSystem.',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'eventSystemId': {'type': 'string', 'format': 'uuid', 'description': 'ID of the event system'},
+                },
+                'required': ['eventSystemId']
+            }
+        },
+        responses={
+            200: {
+                'description': 'EventSystem activated successfully.',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'eventSystemId': {'type': 'string', 'format': 'uuid'},
+                    'status': {'type': 'string'}
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            404: {'description': 'EventSystem not found'},
+            403: {'description': 'Permission denied'},
+            500: {'description': 'An unexpected error occurred. Please try again later.'}
+        },
+        examples=[
+            OpenApiExample(
+                'Activate Example',
+                value={
+                    'eventSystemId': '00000000-0000-0000-0000-000000000000'
+                },
+                request_only=True
+            )
+        ]
+    )
     def patch(self, request, eventSystemId):
         """Activate an EventSystem."""
         try:
@@ -78,7 +150,7 @@ class ActivateEventSystemView(APIView):
             event_system = EventSystemService.update_status(eventSystemId, EventStatus.ACTIVE, request.user)
             return Response({
                 "message": "EventSystem activated successfully.",
-                "eventSystemId": str(event_system.uuid),
+                "eventSystemId": str(event_system.id),
                 "status": event_system.status,
             }, status=status.HTTP_200_OK)
 
@@ -105,6 +177,44 @@ class ActivateEventSystemView(APIView):
 class DeactivateEventSystemView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        tags=['file manager'],
+        description='Deactivate an EventSystem.',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'eventSystemId': {'type': 'string', 'format': 'uuid', 'description': 'ID of the event system'},
+                },
+                'required': ['eventSystemId']
+            }
+        },
+        responses={
+            200: {
+                'description': 'EventSystem deactivated successfully.',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'eventSystemId': {'type': 'string', 'format': 'uuid'},
+                    'status': {'type': 'string'}
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            404: {'description': 'EventSystem not found'},
+            403: {'description': 'Permission denied'},
+            500: {'description': 'An unexpected error occurred. Please try again later.'}
+        },
+        examples=[
+            OpenApiExample(
+                'Deactivate Example',
+                value={
+                    'eventSystemId': '00000000-0000-0000-0000-000000000000'
+                },
+                request_only=True
+            )
+        ]
+    )
     def patch(self, request, eventSystemId):
         """Deactivate an EventSystem."""
         try:
@@ -166,6 +276,34 @@ class DeselectFileView(APIView):
     View to handle the deselecting of a file in an EventSystem.
     """
 
+    @extend_schema(
+        tags=['file manager'],
+        description='Deselect a file in event system',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'eventSystemId': {'type': 'string', 'format': 'uuid', 'description': 'ID of the event system'},
+                    'fileId': {'type': 'string', 'format': 'uuid', 'description': 'ID of the file to deselect'}
+                },
+                'required': ['eventSystemId', 'fileId']
+            }
+        },
+        responses={
+            200: {
+                'description': 'File deselected successfully',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'fileId': {'type': 'string', 'format': 'uuid'},
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            403: {'description': 'Permission denied'},
+            404: {'description': 'File or event system not found'},
+        }
+    )
     def patch(self, request, eventSystemId, fileId):
         try:
             # Call the service or function to deselect the file
@@ -196,6 +334,33 @@ class DeselectFileView(APIView):
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
+    @extend_schema(
+        tags=['file manager'],
+        description='Upload a file to event system',
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {'type': 'string', 'format': 'binary'},
+                },
+                'required': ['file']
+            }
+        },
+        responses={
+            201: {
+                'description': 'File uploaded successfully',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'file_url': {'type': 'string'},
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            403: {'description': 'Permission denied'},
+            409: {'description': 'Conflict'},
+        }
+    )
     async def post(self, request):
         try:
             file = request.FILES.get('file')
@@ -254,6 +419,31 @@ class EventSystemNameUpdateView(APIView):
     """
     Handles updating the name of an EventSystem via PATCH request.
     """
+    @extend_schema(
+        tags=['file manager'],
+        description='Update event system name',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string', 'description': 'New name of the event system'},
+                },
+                'required': ['name']
+            }
+        },
+        responses={
+            200: {
+                'description': 'EventSystem name updated successfully',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            404: {'description': 'EventSystem not found'},
+        }
+    )
     def patch(self, request, eventSystemId):
         try:
             # Retrieve the EventSystem object by its UUID
@@ -295,68 +485,148 @@ class EventSystemNameUpdateView(APIView):
 class FileRetrieveView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=['file manager'],
+        description='Retrieve a file from event system',
+        parameters=[
+            OpenApiParameter(
+                name='eventSystemId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='ID of the event system'
+            ),
+            OpenApiParameter(
+                name='fileId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='ID of the file to retrieve'
+            )
+        ],
+        responses={
+            200: {'description': 'File retrieved successfully'},
+            401: {'description': 'Authentication required'},
+            403: {'description': 'Permission denied'},
+            404: {'description': 'File or event system not found'},
+        }
+    )
     def get(self, request, eventSystemId, fileId):
         try:
-            # Attempt to retrieve the file via FileService
-            file = FileService.get_file(eventSystemId, fileId, request.user)
-
-            # Serialize and return the file data
-            return Response(FileReferenceSerializer(file).data)
-
-        except PermissionDenied as e:
-            # Handle permission denied error (e.g., user not authorized)
-            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
-          
-        except NotFound as e:
-            # Handle case where the file or event system is not found
-            return Response({"error": "File not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        except ValueError as e:
-            # Handle invalid parameter errors (e.g., invalid fileId or eventSystemId)
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            # Catch-all for any unexpected errors
+            # Get the event system
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            
+            # Check if user has access to this event system
+            if event_system.owner != request.user and not request.user.is_superuser:
+                return Response(
+                    {"error": "You don't have permission to access this file"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Get the file
+            file_reference = FileReference.objects.get(
+                id=fileId,
+                event_system=event_system
+            )
+            
+            # Return the file
+            response = FileResponse(file_reference.file)
+            response['Content-Disposition'] = f'attachment; filename="{file_reference.file_name}"'
+            return response
+            
+        except EventSystem.DoesNotExist:
             return Response(
-                {"error": "An unexpected error occurred while retrieving the file."},
+                {"error": "Event system not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except FileReference.DoesNotExist:
+            return Response(
+                {"error": "File not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-        file_url = settings.MEDIA_URL + filename
-        return Response({'message': 'File uploaded successfully', 'file_url': file_url}, status=status.HTTP_201_CREATED)
 
 
 class FileReferenceUpdateFileNameView(UpdateAPIView):
     queryset = FileReference.objects.all()
     serializer_class = FileReferenceSerializer
-    lookup_field = 'id'  # The field to use for lookup
-    lookup_url_kwarg = 'fileId'  # The URL keyword argument for fileId
+    lookup_field = 'id'
+    lookup_url_kwarg = 'fileId'
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def partial_update(self, request, *args, **kwargs):
-        try:
-            # Access eventSystemId from the URL (if needed)
-            event_system_id = kwargs.get('eventSystemId')
-            # Access fileId from the URL
-            file_id = kwargs.get('fileId')
-            # Get the FileReference object
-            instance = self.get_object()
-            
-            # Validate and update the file_name
-            new_file_name = request.data.get('file_name')
-            if not new_file_name or len(new_file_name.strip()) == 0:
-                return Response({"error": "file_name is required and cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+    @extend_schema(
+        tags=['file manager'],
+        description='Update file name in event system (PUT)',
+        parameters=[
+            OpenApiParameter(
+                name='eventSystemId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='UUID of the event system'
+            ),
+            OpenApiParameter(
+                name='fileId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='UUID of the file'
+            )
+        ],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'file_name': {'type': 'string', 'description': 'New name of the file'}
+                },
+                'required': ['file_name']
+            }
+        },
+        responses={
+            200: FileReferenceSerializer,
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            404: {'description': 'File not found'}
+        }
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
-            instance.file_name = new_file_name
-            instance.save()
-
-            # Serialize and return the updated data
-            serializer = self.get_serializer(instance)
-            return Response(serializer.data)
-
-        except ObjectDoesNotExist:
-            return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+    @extend_schema(
+        tags=['file manager'],
+        description='Partially update file name in event system (PATCH)',
+        parameters=[
+            OpenApiParameter(
+                name='eventSystemId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='UUID of the event system'
+            ),
+            OpenApiParameter(
+                name='fileId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='UUID of the file'
+            )
+        ],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'file_name': {'type': 'string', 'description': 'New name of the file'}
+                }
+            }
+        },
+        responses={
+            200: FileReferenceSerializer,
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            404: {'description': 'File not found'}
+        }
+    )
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
 
 class EventSystemFileListView(APIView):
     """
@@ -375,4 +645,83 @@ class EventSystemFileListView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except EventSystem.DoesNotExist:
             return Response({"detail": "EventSystem not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FileSelectView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        tags=['file manager'],
+        description='Select a file in event system',
+        parameters=[
+            OpenApiParameter(
+                name='eventSystemId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='ID of the event system'
+            ),
+            OpenApiParameter(
+                name='fileId',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description='ID of the file to select'
+            )
+        ],
+        responses={
+            200: {
+                'description': 'File selected successfully',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'fileId': {'type': 'string', 'format': 'uuid'},
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Authentication required'},
+            403: {'description': 'Permission denied'},
+            404: {'description': 'File or event system not found'},
+        }
+    )
+    def post(self, request, eventSystemId, fileId):
+        try:
+            # Get the event system
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            
+            # Check if user has access to this event system
+            if event_system.owner != request.user and not request.user.is_superuser:
+                return Response(
+                    {"error": "You don't have permission to access this event system"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Get the file
+            file_reference = FileReference.objects.get(
+                id=fileId,
+                event_system=event_system
+            )
+            
+            # Update file status to selected
+            file_reference.is_selected = True
+            file_reference.save()
+            
+            return Response({
+                'message': 'File selected successfully',
+                'fileId': str(file_reference.id)
+            }, status=status.HTTP_200_OK)
+            
+        except EventSystem.DoesNotExist:
+            return Response(
+                {"error": "Event system not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except FileReference.DoesNotExist:
+            return Response(
+                {"error": "File not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 

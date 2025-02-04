@@ -3,6 +3,11 @@ from django.db import models
 from datetime import timedelta
 from django.utils import timezone
 import uuid
+from user_management.exceptions.custom_exceptions import (
+    UserValidationError,
+    UserStateError,
+    UserNotVerifiedError
+)
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
@@ -110,6 +115,36 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         app_label = 'core'
 
+    def clean(self):
+        """Validate user data"""
+        if not self.email:
+            raise UserValidationError("Email is required")
+        if not self.name:
+            raise UserValidationError("Name is required")
+
+    def save(self, *args, **kwargs):
+        try:
+            self.clean()
+            super().save(*args, **kwargs)
+        except Exception as e:
+            raise UserStateError(f"Error saving user: {str(e)}")
+
+    def activate(self):
+        """Activate user account"""
+        if not self.is_verified:
+            raise UserNotVerifiedError("Cannot activate unverified account")
+        if self.is_active:
+            raise UserStateError("Account is already active")
+        self.is_active = True
+        self.save()
+
+    def deactivate(self):
+        """Deactivate user account"""
+        if not self.is_active:
+            raise UserStateError("Account is already inactive")
+        self.is_active = False
+        self.save()
+
 class FileReference(models.Model):
     """
     A model to store metadata about uploaded files in the system.
@@ -176,6 +211,8 @@ class FileReference(models.Model):
         choices=FileType.choices,
         default=FileType.EVENT_FILE,
     )
+
+    is_selected = models.BooleanField(default=False)
 
     def __str__(self):
         """

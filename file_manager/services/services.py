@@ -27,11 +27,9 @@ class EventSystemFileService:
 class EventSystemService:
     @staticmethod
     def create_event_system(name, user):
-        """Creates a new EventSystem and associates it with the user."""
-        event_system = EventSystem.objects.create(
-            name=name,
-            user=user
-        )
+        """Create a new event system and associate it with the user."""
+        event_system = EventSystem.objects.create(name=name)
+        event_system.users.add(user)
         return event_system
 
     @staticmethod
