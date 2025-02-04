@@ -20,29 +20,19 @@ class UserManager(BaseUserManager):
             raise ValueError("Must provide an email")
 
         email = self.normalize_email(email)
-        try:
-            user = self.model(email=email, **extra_fields)
-            user.set_password(password)
-            user.save(using=self._db)
-            return user
-        except IntegrityError:
-            raise UserAlreadyExistsException("A user with this email already exists.")
-        except Exception as e:
-            raise ValidationError(f"Error creating user: {str(e)}")
-
-
-    def create_superuser(self, email, password=None):
-        """Creates a superuser"""
-        try:
-            user = self.create_user(email, password)
-
-            user.is_staff = True
-            user.is_superuser = True
-            user.save(using=self._db)
-        except Exception as e:      #Taking care of errors that may occur during superuser creation.
-            raise ValidationError(f"Error creating superuser: {str(e)}")
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
         return user
 
+    def create_superuser(self, email, password=None, **extra_fields):
+        """Creates a superuser"""
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('name', email)  # Set a default name
+
+        return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):

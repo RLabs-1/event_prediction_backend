@@ -1,4 +1,3 @@
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, EventSystemCreateSerializer, FileSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,13 +5,12 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
-from file_manager.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemCreateSerializer
+from 
+.services.services import deselect_file, EventSystemService, EventSystemFileService, FileService
 from django.conf import settings
 from core.models import EventSystem
 
 from core.models import EventSystem, FileReference
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, FileReferenceSerializer
 
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
@@ -27,10 +25,7 @@ from rest_framework.authentication import SessionAuthentication
 import aiofiles
 
 from core.models import EventSystem
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer
-
-from file_manager.serializers.serializers import FileReferenceSerializer
-from file_manager.serializers.serializers import EventSystemCreateSerializer, FileReferenceSerializer
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, EventSystemSerializer, EventSystemCreateSerializer, FileSerializer, FileReferenceSerializer
 from rest_framework import viewsets
 from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import APIException, ValidationError, NotFound
@@ -201,32 +196,32 @@ class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     async def post(self, request):
-        file = request.FILES.get('file')
-        if not file:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            file = request.FILES.get('file')
+            if not file:
+                return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Extract file details
-        filename = file.name
-        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+            # Extract file details
+            filename = file.name
+            file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-
-        # Use aiofiles to handle file operations asynchronously
-        async with aiofiles.open(file_path, 'wb+') as destination:
-            # Iterate through the file chunks and write asynchronously
-            for chunk in file.chunks():
-                await destination.write(chunk)
-
-            # Save the file to the media directory
-            with open(file_path, 'wb+') as destination:
+            # Use aiofiles to handle file operations asynchronously
+            async with aiofiles.open(file_path, 'wb+') as destination:
+                # Iterate through the file chunks and write asynchronously
                 for chunk in file.chunks():
-                    destination.write(chunk)
+                    await destination.write(chunk)
 
-            # Generate file URL for the response
-            file_url = settings.MEDIA_URL + filename
-            return Response(
-                {'message': 'File uploaded successfully', 'file_url': file_url},
-                status=status.HTTP_201_CREATED
-            )
+                # Save the file to the media directory
+                with open(file_path, 'wb+') as destination:
+                    for chunk in file.chunks():
+                        destination.write(chunk)
+
+                # Generate file URL for the response
+                file_url = settings.MEDIA_URL + filename
+                return Response(
+                    {'message': 'File uploaded successfully', 'file_url': file_url},
+                    status=status.HTTP_201_CREATED
+                )
 
         except ValidationError as e:
             # Handle validation errors

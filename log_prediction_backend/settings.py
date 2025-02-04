@@ -77,23 +77,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db',
-        'USER': 'postgres',
-        'PASSWORD': '147258magd',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -141,6 +124,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'eventprediction.backend@gmail.com'  #A new Gmail accoun that I created in order to send Emails to the register.
 EMAIL_HOST_PASSWORD = 'ledz sibu oocn lcwo'   #The unique host password I got for my Gmail account.
+DEFAULT_FROM_EMAIL = 'eventprediction.backend@gmail.com'  # Default sender email
 
 
 REST_FRAMEWORK = {
@@ -158,8 +142,8 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 }
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # Default
-    'user_management.backends.EmailBackend',     # Custom
+    'django.contrib.auth.backends.ModelBackend',
+    'user_management.backends.EmailBackend',
 ]
 
 # Directory to store uploaded files

@@ -8,7 +8,7 @@ from user_management.services.services import RegistrationService, UserService, 
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer , UserDeactivateSerializer
 from user_management.models.models import User
 from core.models import User
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
@@ -19,6 +19,7 @@ from user_management.exceptions.custom_exceptions import (
     UserInactiveException,
     InvalidUserOperationException,
 )
+from drf_spectacular.types import OpenApiTypes
 
 
 class UserDeactivateView(APIView):
@@ -82,31 +83,73 @@ class UserLoginView(APIView):
     """
     Handles user login and returns a JWT token.
     """
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'email': {'type': 'string', 'format': 'email'},
+                    'password': {'type': 'string'},
+                },
+                'required': ['email', 'password']
+            }
+        },
+        responses={
+            200: {
+                'description': 'Login successful',
+                'type': 'object',
+                'properties': {
+                    'refresh': {'type': 'string'},
+                    'access': {'type': 'string'},
+                }
+            },
+            400: {'description': 'Bad request'},
+            401: {'description': 'Invalid credentials'},
+            404: {'description': 'User not found'}
+        },
+        examples=[
+            OpenApiExample(
+                'Login Example',
+                value={
+                    'email': 'user@example.com',
+                    'password': 'yourpassword'
+                },
+                request_only=True
+            )
+        ]
+    )
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
 
         if not email or not password:
-            return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "error": "Email and password are required."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
+        # Check if email exists in database
+        try:
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({
+                "error": "No account found with this email address."
+            }, status=status.HTTP_404_NOT_FOUND)
 
         # Authenticate user
         user = authenticate(email=email, password=password)
         if user is not None:
-            tokens = JWTService.create_token(user) # Generate JWT token using JWTService
+            tokens = JWTService.create_token(user)
             return Response({
                 "refresh": tokens["refresh"],
                 "access": tokens["access"],
             }, status=status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "error": "Incorrect password."
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
 class ForgotPasswordView(APIView):
     def post(self, request):
-        """
-        Initiates the password reset process for a user
-        """
-
         email = request.data.get('email')
 
         if not email:
@@ -116,12 +159,9 @@ class ForgotPasswordView(APIView):
 
         try:
             service_response = UserService.initiate_password_reset(email)
-
             return Response(service_response, status=status.HTTP_200_OK)
         except ValueError as ve:
             return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': 'Unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema(
@@ -147,45 +187,32 @@ class ForgotPasswordView(APIView):
 
 class ResetForgotPasswordView(APIView):
     def post(self, request):
+        data = request.data
+        email = data.get('email')
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
+        verification_code = data.get('verification_code')
+
+        # Verify passwords match
+        if new_password != confirm_password:
+            return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            data = request.data
-            email = data.get('email')
-            new_password = data.get('new_password')
-            confirm_password = data.get('confirm_password')
-            verification_code = data.get('verification_code')
-
-            if new_password != confirm_password:
-                return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Retrieve the user based on email
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            # Check if the verification code is -1 (Forbidden)
-            if user.verification_code == '-1':
-                return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-
-            # Check if the token has expired
+            user = User.objects.get(email=email)
+            
+            # Check verification code and expiry
             if user.is_token_expired():
                 return Response({"error": "Verification code expired"}, status=status.HTTP_410_GONE)
-
-            # Check if the verification code matches
             if user.verification_code != verification_code:
                 return Response({"error": "Invalid verification code"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Reset the password and update the necessary fields
+            # Reset password
             user.set_password(new_password)
             user.is_password_reset_pending = False
             user.verification_code = '-1'
             user.save()
 
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
-      
-          
-        except json.JSONDecodeError:
-            return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

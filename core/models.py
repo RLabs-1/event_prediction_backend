@@ -7,35 +7,43 @@ import uuid
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
 
-    def create_user(self, email, password=None, **extra_field):
+    def create_user(self, email, password=None, **extra_fields):
         """Creates a user in the system"""
         if not email:
             raise ValueError("Must provide an email")
         email = self.normalize_email(email)
 
-        user = self.model(email=email, **extra_field)
+        user = self.model(
+            email=email,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
-
         return user
 
-
-    def create_superuser(self, email, password=None):
+    def create_superuser(self, email, password=None, name=None, **extra_fields):
         """Creates a superuser"""
-        user = self.create_user(email, password)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        
+        if not name:
+            name = email  # Default name to email if not provided
 
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-
-        return user
+        return self.create_user(
+            email=email,
+            password=password,
+            name=name,
+            **extra_fields
+        )
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     """
     Base User Model
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+   # id = models.IntegerField(unique=True, primary_key=True)
+
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -45,7 +53,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_verified = models.BooleanField(default=False)
     event_systems = models.ManyToManyField(
         'EventSystem',
-        related_name='associated_users'  # Unique related name
+        related_name='associated_users'
     )
     #A DateTime field to store the time when the verification code was generated.
     token_time_to_live = models.DateTimeField(null=True, blank=True)
@@ -53,6 +61,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     verification_code = models.CharField(max_length=6, null=True, blank=True)  # Assuming it's a 6-digit code
     #A Boolean field to track whether a password reset is pending.
     is_password_reset_pending = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
 
     def is_token_expired(self):
         if not self.token_time_to_live:
@@ -97,6 +106,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         related_name='core_user_groups',
         blank=True,
     )
+
+    class Meta:
+        app_label = 'core'
 
 class FileReference(models.Model):
     """
