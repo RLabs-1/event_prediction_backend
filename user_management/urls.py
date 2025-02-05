@@ -31,9 +31,9 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 urlpatterns = [
     path('user/register/', RegistrationView.as_view(), name='user-register'),
-    path('user/<int:user_id>/update/', UserUpdateView.as_view(), name='user-update'),
-    path('user/<int:user_id>/activate/', ActivateUserView.as_view(), name='activate-user'),
-    path('user/<int:userId>/deactivate', UserDeactivateView.as_view(), name='deactivate-user'),
+    path('user/<uuid:user_id>/update/', UserUpdateView.as_view(), name='user-update'),
+    path('user/<uuid:user_id>/activate/', ActivateUserView.as_view(), name='activate-user'),
+    path('user/<uuid:user_id>/deactivate/', UserDeactivateView.as_view(), name='deactivate-user'),
     path('user/login', UserLoginView.as_view(), name='user-login'),
     path('user/logout/', UserLogoutView.as_view(), name='user-logout'),
     path('user/reset-forgot-password/', ResetForgotPasswordView.as_view(), name='reset-forgot-password'),

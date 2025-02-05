@@ -16,6 +16,7 @@ from user_management.exceptions.custom_exceptions import (
     InvalidUserOperationException,
 )
 from .email_service import EmailService
+from core.models import UserToken
 
 # Set up logger to track errors in User Management
 logger = logging.getLogger(__name__)
@@ -46,35 +47,35 @@ class UserService:
 
     @staticmethod
     def deactivate_user(user_id):
+        """Deactivate a user account"""
         try:
-            user = UserService.get_user_by_id(user_id)
-            if not user.is_active:
-                raise UserInactiveException("The user is already deactivated.")
-            user.is_active = False
+            user = User.objects.get(id=user_id)
+            if not user.valid_account:
+                raise UserInactiveException("User is already inactive")
+            user.valid_account = False
             user.save()
-            return {"message": f"User {user.email} deactivated successfully"}
+            return user
         except User.DoesNotExist:
             raise UserNotFoundException()
-        except Exception as e:
-            logger.error(f"Error occurred during deactivation of user {user_id}: {str(e)}")
-            raise InvalidUserOperationException(str(e))
 
     @staticmethod
     def activate_user(user_id):
+        """Activate a user account"""
         try:
             user = User.objects.get(id=user_id)
-            
-            # Always allow activation
-            user.is_active = True
+            if user.valid_account:
+                return {
+                    "message": "User is already active",
+                    "success": False
+                }
+            user.valid_account = True
             user.save()
-            
             return {
-                'success': True,
-                'message': 'User activated successfully'
+                "message": "User activated successfully",
+                "success": True
             }
-            
         except User.DoesNotExist:
-            raise UserNotFoundException(f"User with ID {user_id} not found")
+            raise UserNotFoundException()
 
     @staticmethod
     def verify_code(email, verification_code):
@@ -188,7 +189,7 @@ class RegistrationService:
                 email=user_data['email'],
                 password=user_data['password'],
                 name=user_data.get('name', ''),
-                is_active=True  # Set is_active to True since no verification needed
+                is_active=False  # Set is_active to True since no verification needed
             )
             
             return user
@@ -201,15 +202,75 @@ class RegistrationService:
 class JWTService:
     @staticmethod
     def create_token(user):
-        """
-        Create a JWT token for the given user using HS256 algorithm.
-        """
-        refresh = RefreshToken.for_user(user)
-        refresh.algorithm = 'HS256'
-        return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }
+        """Create and store JWT token for the user"""
+        try:
+            refresh = RefreshToken.for_user(user)
+            refresh.algorithm = 'HS256'
+            
+            # Create token pair
+            tokens = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+            
+            # Store or update tokens in database
+            try:
+                UserToken.objects.update_or_create(
+                    user=user,
+                    defaults={
+                        'access_token': tokens['access'],
+                        'refresh_token': tokens['refresh']
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Error storing tokens in database: {str(e)}")
+                # Continue even if database storage fails
+                
+            return tokens
+            
+        except Exception as e:
+            logger.error(f"Error creating tokens: {str(e)}")
+            raise InvalidUserOperationException("Error creating authentication tokens")
+
+    @staticmethod
+    def refresh_token(refresh_token_str):
+        """Refresh access token and update in database"""
+        try:
+            refresh = RefreshToken(refresh_token_str)
+            user_id = refresh.payload.get('user_id')
+            user = User.objects.get(id=user_id)
+            
+            # Generate new access token
+            new_access_token = str(refresh.access_token)
+            
+            # Update in database
+            try:
+                user_token = UserToken.objects.get(user=user)
+                user_token.access_token = new_access_token
+                user_token.save()
+            except UserToken.DoesNotExist:
+                # Create new token record if it doesn't exist
+                UserToken.objects.create(
+                    user=user,
+                    access_token=new_access_token,
+                    refresh_token=refresh_token_str
+                )
+            
+            return {
+                'access': new_access_token
+            }
+        except Exception as e:
+            logger.error(f"Error refreshing token: {str(e)}")
+            raise InvalidToken(f"Invalid refresh token")
+
+    @staticmethod
+    def remove_tokens(user):
+        """Remove user tokens from database"""
+        try:
+            UserToken.objects.filter(user=user).delete()
+        except Exception as e:
+            logger.error(f"Error removing tokens: {str(e)}")
+            # Continue even if token removal fails
 
     @staticmethod
     def get_user(token):

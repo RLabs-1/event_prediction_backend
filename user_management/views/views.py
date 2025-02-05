@@ -28,34 +28,34 @@ class UserDeactivateView(APIView):
     
     @extend_schema(
         tags=['User Management'],
-        description='Deactivate a user account. Only superusers can deactivate user accounts.',
+        description='Deactivate your own account.',
         parameters=[
             OpenApiParameter(
-                name='userId',
-                type=OpenApiTypes.INT,
+                name='user_id',
+                type=OpenApiTypes.UUID,
                 location=OpenApiParameter.PATH,
-                description='ID of the user to deactivate'
+                description='UUID of your account to deactivate'
             ),
         ],
         responses={
             200: {'description': 'User deactivated successfully'},
             400: {'description': 'User is already inactive'},
             401: {'description': 'Authentication required'},
-            403: {'description': 'Permission denied - Superuser access required'},
+            403: {'description': 'Permission denied - Can only deactivate your own account'},
             404: {'description': 'User not found'},
         }
     )
-    def patch(self, request, userId):
+    def patch(self, request, user_id):
         try:
-            # Check if user is superuser
-            if not request.user.is_superuser:
+            # Check if user is trying to deactivate their own account
+            if request.user.id != user_id:
                 return Response(
-                    {"error": "Only superusers can deactivate user accounts"},
+                    {"error": "You can only deactivate your own account"},
                     status=status.HTTP_403_FORBIDDEN
                 )
 
             # Attempt to deactivate the user
-            user = UserService.deactivate_user(userId)
+            user = UserService.deactivate_user(user_id)
             serializer = UserDeactivateSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
             
@@ -134,9 +134,9 @@ class UserUpdateView(APIView):
         parameters=[
             OpenApiParameter(
                 name='user_id',
-                type=OpenApiTypes.INT,
+                type=OpenApiTypes.UUID,
                 location=OpenApiParameter.PATH,
-                description='ID of the user to update (must be your own ID unless you are a superuser)'
+                description='UUID of the user to update (must be your own ID)'
             )
         ],
         request={
@@ -154,20 +154,20 @@ class UserUpdateView(APIView):
                 'description': 'User updated successfully',
                 'type': 'object',
                 'properties': {
-                    'id': {'type': 'integer'},
+                    'id': {'type': 'string', 'format': 'uuid'},
                     'name': {'type': 'string'},
                     'email': {'type': 'string', 'format': 'email'}
                 }
             },
             400: {'description': 'Bad request - Invalid data or incorrect current password'},
             401: {'description': 'Authentication required'},
-            403: {'description': 'Permission denied - Can only update your own information'},
-            404: {'description': 'User not found'},
+            403: {'description': 'Permission denied'},
+            404: {'description': 'User not found'}
         }
     )
     def patch(self, request, user_id):
         try:
-            # Get the requesting user
+            # Get the user from the token
             requesting_user = request.user
             
             # Check if user is trying to update their own information
@@ -206,33 +206,29 @@ class ActivateUserView(APIView):
     
     @extend_schema(
         tags=['User Management'],
-        description='Activate a user account. Only superusers can activate user accounts.',
+        description='Activate your own account.',
         parameters=[
             OpenApiParameter(
                 name='user_id',
-                type=OpenApiTypes.INT,
+                type=OpenApiTypes.UUID,
                 location=OpenApiParameter.PATH,
-                description='ID of the user to activate'
+                description='UUID of your account to activate'
             ),
         ],
         responses={
             200: {'description': 'User activated successfully'},
             400: {'description': 'User is already active'},
             401: {'description': 'Authentication required'},
-            403: {'description': 'Permission denied - Superuser access required'},
+            403: {'description': 'Permission denied - Can only activate your own account'},
             404: {'description': 'User not found'},
         }
     )
     def patch(self, request, user_id):
-        """
-        Activates a deactivated user account.
-        Only superusers can activate accounts.
-        """
         try:
-            # Check if user is superuser
-            if not request.user.is_superuser:
+            # Check if user is trying to activate their own account
+            if request.user.id != user_id:
                 return Response(
-                    {"error": "Only superusers can activate user accounts"},
+                    {"error": "You can only activate your own account"},
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -294,33 +290,29 @@ class UserLoginView(APIView):
         ]
     )
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-
-        if not email or not password:
-            return Response({
-                "error": "Email and password are required."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            user = User.objects.get(email=email)
+            email = request.data.get('email')
+            password = request.data.get('password')
             
-            # Check if user is already active/logged in, skip for superusers
-            if user.is_active and not user.is_superuser:
+            if not email or not password:
                 return Response({
-                    "error": "Another user is already logged in. Please logout first.",
-                    "status": "active"
+                    "error": "Email and password are required."
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Authenticate user
-            if user.check_password(password):
-                # Update last_login timestamp
-                user.last_login = timezone.now()
                 
-                # Activate user and save changes
+            user = authenticate(request, username=email, password=password)
+            
+            if user:
+                if not user.valid_account:
+                    return Response({
+                        "error": "Account is not activated."
+                    }, status=status.HTTP_403_FORBIDDEN)
+                
+                # Set user as active when logging in
                 user.is_active = True
+                user.last_login = timezone.now()
                 user.save()
                 
+                # Create and store tokens
                 tokens = JWTService.create_token(user)
                 return Response({
                     "refresh": tokens["refresh"],
@@ -329,13 +321,12 @@ class UserLoginView(APIView):
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    "error": "Incorrect password."
+                    "error": "Invalid credentials."
                 }, status=status.HTTP_401_UNAUTHORIZED)
-                
-        except User.DoesNotExist:
+        except Exception as e:
             return Response({
-                "error": "No account found with this email address."
-            }, status=status.HTTP_404_NOT_FOUND)
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ForgotPasswordView(APIView):
     @extend_schema(
@@ -394,7 +385,7 @@ class ForgotPasswordView(APIView):
 class ResetForgotPasswordView(APIView):
     @extend_schema(
         tags=['User Management'],
-        description='Reset password using verification code',
+        description='Reset forgotten password using verification code',
         request={
             'application/json': {
                 'type': 'object',
@@ -410,31 +401,66 @@ class ResetForgotPasswordView(APIView):
         responses={
             200: {'description': 'Password reset successfully'},
             400: {'description': 'Invalid data or verification code'},
-            404: {'description': 'User not found'}
+            404: {'description': 'User not found'},
+            410: {'description': 'Verification code expired'}
         }
     )
     def post(self, request):
-        email = request.data.get('email')
-        verification_code = request.data.get('verification_code')
-        new_password = request.data.get('new_password')
-        confirm_password = request.data.get('confirm_password')
-
-        # Make sure all required fields are present
-        if not all([email, verification_code, new_password, confirm_password]):
-            return Response({
-                'error': 'All fields are required: email, verification_code, new_password, confirm_password'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            service_response = UserService.reset_password(
-                email, 
-                verification_code, 
-                new_password, 
-                confirm_password
-            )
-            return Response(service_response, status=status.HTTP_200_OK)
+            # Get all required fields
+            email = request.data.get('email')
+            verification_code = request.data.get('verification_code')
+            new_password = request.data.get('new_password')
+            confirm_password = request.data.get('confirm_password')
+
+            # Validate all fields are present
+            if not all([email, verification_code, new_password, confirm_password]):
+                return Response({
+                    'error': 'All fields are required: email, verification_code, new_password, confirm_password'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if passwords match
+            if new_password != confirm_password:
+                return Response({
+                    'error': 'Passwords do not match'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                # Get user by email
+                user = User.objects.get(email=email)
+
+                # Verify the code
+                if not user.verification_code or user.verification_code != verification_code:
+                    return Response({
+                        'error': 'Invalid verification code'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Check if code is expired
+                if user.is_token_expired():
+                    return Response({
+                        'error': 'Verification code has expired'
+                    }, status=status.HTTP_410_GONE)
+
+                # Reset password
+                user.set_password(new_password)
+                user.verification_code = None  # Clear the verification code
+                user.token_time_to_live = None  # Clear the expiry
+                user.is_password_reset_pending = False
+                user.save()
+
+                return Response({
+                    'message': 'Password reset successfully'
+                }, status=status.HTTP_200_OK)
+
+            except User.DoesNotExist:
+                return Response({
+                    'error': 'User not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
           
 
@@ -490,11 +516,15 @@ class UserLogoutView(APIView):
     def post(self, request):
         try:
             user = request.user
+            # Remove tokens from database
+            JWTService.remove_tokens(user)
+            
+            # Set user as inactive
             user.is_active = False
             user.save()
             
             return Response({
-                "message": "Logged out successfully and account deactivated"
+                "message": "Logged out successfully"
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -532,3 +562,43 @@ class CurrentUserView(APIView):
             'is_active': user.is_active,
             'last_login': user.last_login
         }, status=status.HTTP_200_OK)
+
+class CustomTokenRefreshView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Authentication'],
+        description='Refresh access token',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'refresh': {'type': 'string'}
+                }
+            }
+        },
+        responses={
+            200: {
+                'description': 'New access token',
+                'type': 'object',
+                'properties': {
+                    'access': {'type': 'string'}
+                }
+            }
+        }
+    )
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response({
+                    'error': 'Refresh token is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            new_tokens = JWTService.refresh_token(refresh_token)
+            return Response(new_tokens, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_401_UNAUTHORIZED)

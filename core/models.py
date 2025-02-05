@@ -30,7 +30,7 @@ class UserManager(BaseUserManager):
         """Creates a superuser"""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_active', False)
         
         if not name:
             name = email  # Default name to email if not provided
@@ -47,11 +47,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     Base User Model
     """
-   # id = models.IntegerField(unique=True, primary_key=True)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False,
+        help_text="Unique identifier for the user"
+    )
 
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)  # For login/logout status
+    valid_account = models.BooleanField(default=True)  # For account activation status
     is_staff = models.BooleanField(default=False)
     rating = models.FloatField(default=0.0)
     num_of_usages = models.IntegerField(default=0)
@@ -129,20 +135,20 @@ class User(AbstractBaseUser, PermissionsMixin):
         except Exception as e:
             raise UserStateError(f"Error saving user: {str(e)}")
 
-    def activate(self):
+    def activate_account(self):
         """Activate user account"""
         if not self.is_verified:
             raise UserNotVerifiedError("Cannot activate unverified account")
-        if self.is_active:
+        if self.valid_account:
             raise UserStateError("Account is already active")
-        self.is_active = True
+        self.valid_account = True
         self.save()
 
-    def deactivate(self):
+    def deactivate_account(self):
         """Deactivate user account"""
-        if not self.is_active:
+        if not self.valid_account:
             raise UserStateError("Account is already inactive")
-        self.is_active = False
+        self.valid_account = False
         self.save()
 
 class FileReference(models.Model):
@@ -256,3 +262,21 @@ class EventSystem(models.Model):
 
     def __str__(self):
         return self.name
+
+class UserToken(models.Model):
+    """Model to store user tokens"""
+    user = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        related_name='tokens'
+    )
+    access_token = models.TextField()
+    refresh_token = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'core'
+
+    def __str__(self):
+        return f"Token for {self.user.email}"

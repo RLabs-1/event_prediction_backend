@@ -144,8 +144,8 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 }
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
     'user_management.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Keep the default backend as fallback
 ]
 
 # Directory to store uploaded files
