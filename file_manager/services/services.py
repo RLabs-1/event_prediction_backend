@@ -1,28 +1,149 @@
-from django.shortcuts import get_object_or_404
 from core.models import EventSystem, FileReference
-from rest_framework.exceptions import PermissionDenied, NotFound
-from core.models import EventSystem, FileReference
-
+import os
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
 class EventSystemFileService:
     @staticmethod
-    def delete_file(event_system_id, file_id):
-        try:
-            # Retrieve EventSystem, raise NotFound if not found
-            event_system = get_object_or_404(EventSystem, uuid=event_system_id)
+    def upload_file(file, event_system_id, user):
+        """Save file to local storage and create a FileReference entry."""
 
-            # Retrieve FileReference, raise NotFound if not found or doesn't belong to the event system
-            file_reference = get_object_or_404(FileReference, uuid=file_id, event_system=event_system)
+        event_system = EventSystem.objects.get(uuid=event_system_id)
 
-            # Proceed with deletion
-            file_reference.delete()
-        except EventSystem.DoesNotExist:
-            raise NotFound(f"Event system with ID '{event_system_id}' not found.")
-        except FileReference.DoesNotExist:
-            raise NotFound(f"File with ID '{file_id}' not found in event system.")
-        except Exception as e:
-            raise Exception(f"An unexpected error occurred: {str(e)}")
+        # Check if the authenticated user is part of the event system
+        if user not in event_system.users.all():
+            raise PermissionError("You do not have permission to upload files to this EventSystem.")
 
+        # Check if a file with the same name already exists in this event system
+        existing_file = event_system.file_objects.filter(file_name=file.name).first()
+        if existing_file:
+            raise FileExistsError("A file with the same name already exists.")
+
+        file_path = os.path.join('event_system', str(event_system_id), file.name)
+
+        # Save file
+        saved_path = default_storage.save(file_path, ContentFile(file.read()))
+        file_url = settings.MEDIA_URL + saved_path  # Generate the file URL
+
+        # Create FileReference entry
+        file_reference = FileReference.objects.create(
+            file_name=file.name,
+            url=file_url,
+            storage_provider=FileReference.StorageProvider.LOCAL,
+            size=file.size,
+            upload_status=FileReference.UploadStatus.COMPLETE,  # Mark as complete
+            file_type=FileReference.FileType.EVENT_FILE
+        )
+
+        # Associate file with EventSystem
+        event_system.file_objects.add(file_reference)
+
+        return file_reference
+
+    @staticmethod
+    def delete_file(event_system_id, file_id, user):
+        """Deletes a file from storage and removes its reference in the database."""
+
+        event_system = EventSystem.objects.get(uuid=event_system_id)
+        file_reference = FileReference.objects.get(id=file_id)
+
+        # Check if the authenticated user is part of the event system
+        if user not in event_system.users.all():
+            raise PermissionError("You do not have permission to delete this file.")
+
+        # Ensure file belongs to the event system
+        if not event_system.file_objects.filter(id=file_id).exists():
+            raise ValueError("File does not belong to this EventSystem.")
+
+        # Remove the file reference from the EventSystem's Many-to-Many relationship
+        event_system.file_objects.remove(file_reference)
+
+        # Delete the file from local storage
+        relative_path = file_reference.url.replace(settings.MEDIA_URL, "").lstrip("/")
+        file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        # Remove the file reference from DB
+        file_reference.delete()
+
+        return file_id
+
+    @staticmethod
+    def update_file_name(event_system_id, file_id, new_file_name, user):
+        """Update the file name for the given event system and file ID."""
+
+        event_system = EventSystem.objects.get(uuid=event_system_id)
+        file_reference = FileReference.objects.get(id=file_id)
+
+        # Check if the authenticated user is part of the event system
+        if user not in event_system.users.all():
+            raise PermissionError("You do not have permission to update this file name.")
+
+        # Ensure the file belongs to the event system
+        if not event_system.file_objects.filter(id=file_id).exists():
+            raise ValueError("File does not belong to this EventSystem.")
+
+        # Check if the new file name is the same as the current one
+        if file_reference.file_name == new_file_name:
+            raise ValueError("The new file name is the same as the existing one. No update needed.")
+
+        # Check if a file with the same name already exists in this event system
+        existing_file = event_system.file_objects.filter(file_name=new_file_name).first()
+        if existing_file:
+            raise FileExistsError("A file with the same name already exists.")
+
+        # Update the file name in the database
+        file_reference.file_name = new_file_name
+
+        # Rename the file in the local storage
+        relative_path = file_reference.url.replace(settings.MEDIA_URL, "").lstrip("/")
+        old_file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+        new_file_path = os.path.join(os.path.dirname(old_file_path), new_file_name)
+
+        if os.path.exists(old_file_path):
+            os.rename(old_file_path, new_file_path)  # Rename the file
+            # Update the file URL/path in the database
+            event_system_directory = os.path.join("event_system", str(event_system.uuid))
+            file_reference.url = os.path.join(settings.MEDIA_URL, event_system_directory, new_file_name)
+            print(f"Updated file URL: {file_reference.url}")
+
+        # Save the updated file reference in the database
+        file_reference.save()
+
+        return file_reference
+
+    @staticmethod
+    def flag_file(event_system_id, file_id, user, action):
+        """Flags a file as selected or deselected for a given event system."""
+
+        if action not in ['select', 'deselect']:
+            raise ValueError("Invalid action. Action must be either 'select' or 'deselect'.")
+
+        event_system = EventSystem.objects.get(uuid=event_system_id)
+        file_reference = FileReference.objects.get(id=file_id)
+
+        # Check if the authenticated user is part of the event system
+        if user not in event_system.users.all():
+            raise PermissionError("You do not have permission to 'select' or 'deselect' this file.")
+
+        # Ensure the file belongs to the event system
+        if not event_system.file_objects.filter(id=file_id).exists():
+            raise ValueError("File does not belong to this EventSystem.")
+
+        # Select the file or deselect it
+        if action == 'select':
+            if file_reference.is_selected:
+                raise ValueError("File is already selected.")
+            file_reference.is_selected = True
+        elif action == 'deselect':
+            if not file_reference.is_selected:
+                raise ValueError("File is already not selected.")
+            file_reference.is_selected = False
+
+        file_reference.save()
+        return file_reference
 
 class EventSystemService:
     @staticmethod
@@ -33,68 +154,29 @@ class EventSystemService:
         return event_system
 
     @staticmethod
-    def update_status(eventSystemId, status, user):
-        """Update the status of an EventSystem."""
-        try:
-            # Retrieve the EventSystem, raise ValueError if not found or the user doesn't have permission
-            event_system = EventSystem.objects.get(uuid=eventSystemId, user=user)
+    def update_event_system_name(event_system, new_name):
+        """Update the name of the EventSystem"""
+        event_system.name = new_name
+        event_system.save()
+        return event_system
 
-            if event_system.status == status:
-                raise ValueError(f"EventSystem is already {status.lower()}.")
-
-            # Update the status and save
-            event_system.status = status
-            event_system.save()
-            return event_system
-        except EventSystem.DoesNotExist:
-            raise ValueError("EventSystem not found or you do not have permission to modify it.")
-        except Exception as e:
-            raise Exception(f"An unexpected error occurred: {str(e)}")
-
-
-def deselect_file(event_system_id, file_id):
-    """
-    Logic for deselecting a file in an EventSystem.
-    """
-    try:
-        # Retrieve EventSystem, raise NotFound if not found
-        event_system = get_object_or_404(EventSystem, uuid=event_system_id)
-
-        # Retrieve FileReference, raise NotFound if not found or doesn't belong to the event system
-        file_reference = get_object_or_404(FileReference, uuid=file_id, event_system=event_system)
-
-        # Update the 'selected' flag and save
-        file_reference.selected = False
-        file_reference.save()
-
-        return {"message": "File has been deselected"}
-    except EventSystem.DoesNotExist:
-        raise NotFound(f"Event system with ID '{event_system_id}' not found.")
-    except FileReference.DoesNotExist:
-        raise NotFound(f"File with ID '{file_id}' not found in event system.")
-    except Exception as e:
-        raise Exception(f"An unexpected error occurred: {str(e)}")
-
-
-class FileService:
     @staticmethod
-    def get_file(event_system_id, file_id, user):
-        try:
-            # Retrieve EventSystem, raise NotFound if not found
-            event_system = get_object_or_404(EventSystem, uuid=event_system_id)
+    def update_status(eventSystemId, status, user):
+        """Update the status of an EventSystem (acTive/deactive)"""
 
-            # Check if the user has access to the event system
-            if event_system.user != user:
-                raise PermissionDenied("You don't have access to this file")
+        # Retrieve the EventSystem, raise ValueError if not found
+        event_system = EventSystem.objects.get(uuid=eventSystemId)
 
-            # Retrieve FileReference, raise NotFound if not found or doesn't belong to the event system
-            file_reference = get_object_or_404(FileReference, uuid=file_id, event_system=event_system)
-            return file_reference
-        except EventSystem.DoesNotExist:
-            raise NotFound(f"Event system with ID '{event_system_id}' not found.")
-        except FileReference.DoesNotExist:
-            raise NotFound(f"File with ID '{file_id}' not found in event system.")
-        except PermissionDenied as e:
-            raise e  # Re-raise PermissionDenied to be caught by the views layer
-        except Exception as e:
-            raise Exception(f"An unexpected error occurred: {str(e)}")
+        if user not in event_system.users.all():
+            raise PermissionError("You do not have permission to deactivate this EventSystem.")
+
+        if event_system.status == status:
+            raise ValueError(f"EventSystem is already {status.lower()}.")
+
+        # Update the status and save
+        event_system.status = status
+        event_system.save()
+        return event_system
+
+
+
