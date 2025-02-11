@@ -1,6 +1,5 @@
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 from django.core.exceptions import ValidationError
 
 
@@ -8,13 +7,10 @@ class EmailBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
         UserModel = get_user_model()
         try:
-            # Try to fetch the user by email or username
-            user = UserModel.objects.get(
-                Q(username=username) | Q(email=username)
-            )
+            # Use email instead of username
+            user = UserModel.objects.get(email=username)
             if user.check_password(password):
                 return user
-        #Handling user-related errors appropriately
         except UserModel.DoesNotExist:
             return None
         except ValidationError as ve:
