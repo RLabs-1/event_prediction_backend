@@ -75,7 +75,6 @@ class EmailService:
         except Exception as e:
             print(f"Error sending email: {str(e)}")
             raise Exception("Failed to send password reset email")
-
     @staticmethod
     def send_email(email):
         """
