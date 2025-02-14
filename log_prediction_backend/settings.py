@@ -76,6 +76,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'log_prediction_backend.wsgi.application'
+STATIC_ROOT = 'staticfiles'
+
 
 
 
