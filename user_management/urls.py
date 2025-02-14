@@ -9,6 +9,7 @@ from .views.views import (
     ForgotPasswordView,
     UserLogoutView,
     CurrentUserView,
+    VerifyEmailView,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema
@@ -40,4 +41,5 @@ urlpatterns = [
     path('user/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('user/refresh-token/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('user/current/', CurrentUserView.as_view(), name='current-user'),
+    path('user/verify-email/', VerifyEmailView.as_view(), name='verify-email'),
 ]
