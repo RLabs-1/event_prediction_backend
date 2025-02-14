@@ -176,22 +176,31 @@ class UserService:
 
 class RegistrationService:
     def register_user(self, user_data):
-        """
-        Register a new user with is_active=True by default.
-        """
+        """Register a new user and send verification email"""
         try:
             # Check if user already exists
             if User.objects.filter(email=user_data['email']).exists():
                 raise UserAlreadyExistsException()
 
-            # Create user with is_active=True since we don't need verification
+            # Create user with is_active=False until verified
             user = User.objects.create_user(
                 email=user_data['email'],
                 password=user_data['password'],
                 name=user_data.get('name', ''),
-                is_active=False  # Set is_active to True since no verification needed
+                is_active=False,
+                is_verified=False
             )
-            
+
+            # Send welcome email with verification code
+            try:
+                verification_code = EmailService.send_email(user.email)
+                user.verification_code = verification_code
+                user.token_time_to_live = timezone.now()
+                user.save()
+            except Exception as e:
+                logger.error(f"Error sending verification email: {str(e)}")
+                # Continue with registration even if email fails
+
             return user
 
         except Exception as e:

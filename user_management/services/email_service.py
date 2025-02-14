@@ -9,41 +9,52 @@ logger = logging.getLogger('user_management')
 
 class EmailService:
 
-    def generate_verification_code(self):
-        """Generate a 6-digit verification code"""
-        return ''.join(random.choices(string.digits, k=6))
+    @staticmethod
+    def generate_verification_code(length=6):
+        """Generate a random verification code"""
+        return ''.join(random.choices(string.digits, k=length))
 
-    def send_email(self, recipient_email):
-        """Send verification code email"""
+    @staticmethod
+    def send_email(email):
+        """
+        Send welcome email with verification code to newly registered user
+        """
         try:
-            verification_code = self.generate_verification_code()
-            print(f"Generated code: {verification_code}")  # Debug print
+            # Generate verification code
+            verification_code = EmailService.generate_verification_code()
             
-            subject = "Password Reset Verification Code"
+            subject = "Welcome to Event Prediction System - Email Verification"
             message = f"""
-            Your verification code is: {verification_code}
+            Welcome to Event Prediction System!
             
-            Please use this code to reset your password.
+            Thank you for registering. To complete your registration and activate your account, 
+            please use the following verification code:
+            
+            Verification Code: {verification_code}
+            
             This code will expire in 1 hour.
+            
+            If you did not register for an account, please ignore this email.
+            
+            Best regards,
+            Event Prediction Team
             """
             
-            print(f"Attempting to send email to: {recipient_email}")  # Debug print
-            print(f"Using sender email: {settings.EMAIL_HOST_USER}")  # Debug print
-            
+            # Send email
             send_mail(
                 subject=subject,
                 message=message,
                 from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[recipient_email],
+                recipient_list=[email],
                 fail_silently=False,
             )
             
-            print("Email sent successfully!")  # Debug print
+            logger.info(f"Welcome email sent successfully to {email}")
             return verification_code
             
         except Exception as e:
-            print(f"Error sending email: {str(e)}")  # Debug print
-            raise Exception(f"Failed to send email: {str(e)}")
+            logger.error(f"Failed to send welcome email: {str(e)}")
+            raise Exception(f"Failed to send welcome email: {str(e)}")
 
     @staticmethod
     def send_password_reset_email(email, verification_code):
@@ -75,11 +86,3 @@ class EmailService:
         except Exception as e:
             print(f"Error sending email: {str(e)}")
             raise Exception("Failed to send password reset email")
-
-    @staticmethod
-    def send_email(email):
-        """
-        Send verification email
-        """
-        # Your existing send_email implementation
-        pass

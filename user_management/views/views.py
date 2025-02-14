@@ -269,20 +269,11 @@ class UserLoginView(APIView):
                     'access': {'type': 'string'},
                 }
             },
-            400: {'description': 'Bad request - Another user is logged in'},
+            400: {'description': 'Bad request'},
             401: {'description': 'Invalid credentials'},
+            403: {'description': 'Email not verified'},
             404: {'description': 'User not found'}
-        },
-        examples=[
-            OpenApiExample(
-                'Login Example',
-                value={
-                    'email': 'user@gmail.com',
-                    'password': 'password'
-                },
-                request_only=True
-            )
-        ]
+        }
     )
     def post(self, request):
         try:
@@ -297,17 +288,16 @@ class UserLoginView(APIView):
             user = authenticate(request, username=email, password=password)
             
             if user:
-                if not user.valid_account:
+                # Check if email is verified
+                if not user.is_verified:
                     return Response({
-                        "error": "Account is not activated."
+                        "error": "Please verify your email before logging in. Check your inbox for the verification code."
                     }, status=status.HTTP_403_FORBIDDEN)
                 
                 # Set user as active when logging in
                 user.is_active = True
-                user.last_login = timezone.now()
                 user.save()
                 
-                # Create and store tokens
                 tokens = JWTService.create_token(user)
                 return Response({
                     "refresh": tokens["refresh"],
@@ -597,3 +587,68 @@ class CustomTokenRefreshView(APIView):
             return Response({
                 'error': str(e)
             }, status=status.HTTP_401_UNAUTHORIZED)
+
+class VerifyEmailView(APIView):
+    @extend_schema(
+        tags=['User Management'],
+        description='Verify user email with verification code',
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'email': {'type': 'string', 'format': 'email'},
+                    'verification_code': {'type': 'string'},
+                },
+                'required': ['email', 'verification_code']
+            }
+        },
+        responses={
+            200: {'description': 'Email verified successfully'},
+            400: {'description': 'Invalid or expired verification code'},
+            404: {'description': 'User not found'}
+        }
+    )
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            verification_code = request.data.get('verification_code')
+
+            if not email or not verification_code:
+                return Response({
+                    'error': 'Email and verification code are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                return Response({
+                    'error': 'User not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Check verification code
+            if not user.verification_code or user.verification_code != verification_code:
+                return Response({
+                    'error': 'Invalid verification code'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if code is expired (1 hour)
+            if user.is_token_expired():
+                return Response({
+                    'error': 'Verification code has expired'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Verify user
+            user.is_verified = True
+            user.is_active = True
+            user.verification_code = None  # Clear the code
+            user.token_time_to_live = None  # Clear the expiry
+            user.save()
+
+            return Response({
+                'message': 'Email verified successfully'
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -75,6 +75,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=timezone.now)
 
     def is_token_expired(self):
+        """Check if the verification code has expired"""
         if not self.token_time_to_live:
             return True
         return timezone.now() > self.token_time_to_live + timedelta(hours=1)
