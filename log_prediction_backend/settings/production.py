@@ -2,7 +2,15 @@ from .base import *
 import dj_database_url
 
 DEBUG = False
-ALLOWED_HOSTS = ['.herokuapp.com', 'your-domain.com']  # Add your Heroku domain
+ALLOWED_HOSTS = ['.herokuapp.com', 'log-analyzer-backend.herokuapp.com']
+
+# Update database configuration
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 # Configure Django middleware to serve static files through Whitenoise
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
@@ -11,15 +19,15 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Database configuration for Heroku
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
+# DATABASE_URL = os.environ.get('DATABASE_URL')
+# if DATABASE_URL:
+#     DATABASES = {
+#         'default': dj_database_url.config(
+#             default=DATABASE_URL,
+#             conn_max_age=600,
+#             ssl_require=True
+#         )
+#     }
 
 # Security settings for Heroku
 SECURE_SSL_REDIRECT = True
