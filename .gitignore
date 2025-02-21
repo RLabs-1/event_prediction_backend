@@ -9,6 +9,9 @@ pyvenv.cfg
 /venv
 .venv
 
+# Ignore local configuration file
+local.py
+
 #Compiled Files
 __pycache__/
 *.pyc

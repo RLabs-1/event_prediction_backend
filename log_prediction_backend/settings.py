@@ -13,10 +13,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+from loguru import logger
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -155,30 +156,85 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-# Logging configuration
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',  # Changed from ERROR to INFO
-            'class': 'logging.StreamHandler',
+
+#Logging configuration
+
+# Ensure LOG_DIR exists
+LOG_DIR = os.path.join(BASE_DIR, 'logs') 
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Remove default log handlers to avoid duplicates
+logger.remove()
+
+# Log format
+LOG_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}"
+
+# Configure Loguru Handlers
+logger.configure(
+    handlers=[
+        # Debug Log (Logs all messages)
+        {
+            "sink": os.path.join(LOG_DIR, "debug.log"),
+            "level": "DEBUG",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
         },
-        'file': {
-            'level': 'INFO',  # Changed from ERROR to INFO
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'error.log'),
+        # Warning Log
+        {
+            "sink": os.path.join(LOG_DIR, "warning.log"),
+            "level": "WARNING",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
         },
-    },
-    'loggers': {
-        'user_management': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',  # Changed from ERROR to INFO
-            'propagate': True,
+        # Error Log
+        {
+            "sink": os.path.join(LOG_DIR, "error.log"),
+            "level": "ERROR",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
         },
-    },
-}
+        # Critical Log
+        {
+            "sink": os.path.join(LOG_DIR, "critical.log"),
+            "level": "CRITICAL",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+        },
+        # Console Output (for development)
+        {
+            "sink": sys.stderr,
+            "level": "DEBUG" if DEBUG else "INFO",
+            "format": "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{message}</cyan>",
+            "enqueue": True,
+        },
+    ]
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
