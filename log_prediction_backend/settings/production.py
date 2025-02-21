@@ -2,7 +2,7 @@ from .base import *
 import dj_database_url
 
 DEBUG = False
-ALLOWED_HOSTS = ['.herokuapp.com', 'log-analyzer-backend.herokuapp.com']
+ALLOWED_HOSTS = ['.herokuapp.com', 'temp-event-analyzer.herokuapp.com']
 
 # Update database configuration
 DATABASES = {
