@@ -7,6 +7,9 @@ ALLOWED_HOSTS = ['temp-event-analyzer-fe6caee7f8ac.herokuapp.com']
 # Database configuration for Heroku
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -15,13 +18,16 @@ if DATABASE_URL:
         )
     }
 else:
-    # Fallback for when DATABASE_URL is not available (shouldn't happen in production)
+    # Fallback for local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
+
+# Additional database settings for performance
+DATABASES['default']['CONN_MAX_AGE'] = 600  # Keep connections alive for 10 minutes
 
 # Configure Django middleware to serve static files through Whitenoise
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
