@@ -4,13 +4,24 @@ import dj_database_url
 DEBUG = False
 ALLOWED_HOSTS = ['temp-event-analyzer-fe6caee7f8ac.herokuapp.com']
 
-# Update database configuration
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+# Database configuration for Heroku
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+else:
+    # Fallback for when DATABASE_URL is not available (shouldn't happen in production)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 # Configure Django middleware to serve static files through Whitenoise
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
@@ -18,16 +29,9 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 # Configure static file storage
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Database configuration for Heroku
-# DATABASE_URL = os.environ.get('DATABASE_URL')
-# if DATABASE_URL:
-#     DATABASES = {
-#         'default': dj_database_url.config(
-#             default=DATABASE_URL,
-#             conn_max_age=600,
-#             ssl_require=True
-#         )
-#     }
+# Static files settings
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
 
 # Security settings for Heroku
 SECURE_SSL_REDIRECT = True
@@ -36,7 +40,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-
 
 # Production Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -72,7 +75,7 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
 }
 
-# Production Logging - More strict
+# Production Logging - More strict, but with console only for Heroku
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -81,15 +84,15 @@ LOGGING = {
             'level': 'ERROR',
             'class': 'logging.StreamHandler',
         },
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'error.log'),
-        },
     },
     'loggers': {
         'user_management': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
             'level': 'ERROR',
             'propagate': True,
         },

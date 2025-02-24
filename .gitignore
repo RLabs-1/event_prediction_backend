@@ -5,7 +5,7 @@
 .env
 pyvenv.cfg
 /Scripts/
-*/migrations
+#*/migrations
 /venv
 .venv
 
