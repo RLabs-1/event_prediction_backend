@@ -1,11 +1,13 @@
 # Database configurations
+from .base import *
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3'
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
    }
 }
 
-from .base import *
 
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'temp-event-analyzer-fe6caee7f8ac.herokuapp.com']
