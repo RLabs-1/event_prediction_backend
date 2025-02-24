@@ -6,4 +6,4 @@ class UserManagementConfig(AppConfig):
     name = 'user_management'
     
     def ready(self):
-        import user_management.models  # This ensures models are loaded
+        import core.models  # This ensures models are loaded
