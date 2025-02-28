@@ -71,7 +71,6 @@ class UserService:
             user.valid_account = True
             user.save()
             return {
-                "message": "User activated successfully",
                 "success": True
             }
         except User.DoesNotExist:

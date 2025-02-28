@@ -35,13 +35,12 @@ class EventSystemCreateView(APIView):
                 'description': 'Event system created successfully',
                 'type': 'object',
                 'properties': {
-                    'id': {'type': 'string', 'format': 'uuid'},
-                    'name': {'type': 'string'},
-                    'message': {'type': 'string'}
+                    'id': {'type': 'string', 'format': 'uuid'}
                 }
             },
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
+            403: {'description': "Permission Denied"}
         },
         examples=[
             OpenApiExample(
@@ -63,7 +62,7 @@ class EventSystemCreateView(APIView):
                     serializer.validated_data['name'], request.user
                 )
                 return Response(
-                    EventSystemCreateSerializer(event_system).data,
+                    {'id': event_system.id},
                     status=status.HTTP_201_CREATED
                 )
             except Exception as e:
@@ -93,13 +92,7 @@ class EventSystemNameUpdateView(APIView):
             }
         },
         responses={
-            200: {
-                'description': 'EventSystem name updated successfully',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied - You do not have permission to update this EventSystem.'},
@@ -110,7 +103,7 @@ class EventSystemNameUpdateView(APIView):
     def patch(self, request, eventSystemId):
         try:
 
-            event_system = EventSystem.objects.get(uuid=eventSystemId)
+            event_system = EventSystem.objects.get(id=eventSystemId)
 
             # Check if the user is authorized to update this EventSystem
             if request.user not in event_system.users.all():
@@ -127,7 +120,7 @@ class EventSystemNameUpdateView(APIView):
                 raise ValueError("Invalid request. 'name' field is required.")
 
             updated_event_system = EventSystemService.update_event_system_name(event_system, serializer.validated_data['name'])
-            return Response({"message": "EventSystem name updated successfully."}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         except EventSystem.DoesNotExist:
             return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -149,15 +142,7 @@ class ActivateEventSystemView(APIView):
         description='Activate an EventSystem.',
         request=None,
         responses={
-            200: {
-                'description': 'EventSystem activated successfully.',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                    'eventSystemId': {'type': 'string', 'format': 'uuid'},
-                    'status': {'type': 'string'}
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied - You do not have permission to activate this EventSystem.'},
@@ -180,10 +165,8 @@ class ActivateEventSystemView(APIView):
             # Attempt to update the status of the EventSystem
             event_system = EventSystemService.update_status(eventSystemId, EventStatus.ACTIVE, request.user)
             return Response({
-                "message": "EventSystem activated successfully.",
-                "eventSystemId": str(event_system.id),
-                "status": event_system.status,
-            }, status=status.HTTP_200_OK)
+                "message": "EventSystem activated successfully."
+            }, status=status.HTTP_204_NO_CONTENT)
 
         except ValueError as e:
             # Handle invalid values or data
@@ -213,15 +196,7 @@ class DeactivateEventSystemView(APIView):
         description='Deactivate an EventSystem.',
         request=None,
         responses={
-            200: {
-                'description': 'EventSystem deactivated successfully.',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                    'eventSystemId': {'type': 'string', 'format': 'uuid'},
-                    'status': {'type': 'string'}
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied - You do not have permission to deactivate this EventSystem.'},
@@ -240,14 +215,11 @@ class DeactivateEventSystemView(APIView):
     )
     def patch(self, request, eventSystemId):
         """Deactivate an EventSystem."""
+        print("Trying to patch")
         try:
             # Attempt to update the status of the EventSystem
             event_system = EventSystemService.update_status(eventSystemId, EventStatus.INACTIVE, request.user)
-            return Response({
-                "message": "EventSystem deactivated successfully.",
-                "eventSystemId": str(event_system.uuid),
-                "status": event_system.status,
-            }, status=status.HTTP_200_OK)
+            return Response( status=status.HTTP_204_NO_CONTENT)
 
         except ValueError as e:
             # Handle invalid values or data
@@ -290,7 +262,6 @@ class FileUploadView(APIView):
                 'type': 'object',
                 'properties': {
                     'message': {'type': 'string'},
-                    'file_url': {'type': 'string'},
                     'file_id': {'type': 'string'},
                 }
             },
@@ -313,7 +284,6 @@ class FileUploadView(APIView):
 
             return Response({
                 "message": "File uploaded successfully",
-                "file_url": file_reference.url,
                 "file_id": file_reference.id
             }, status=status.HTTP_201_CREATED)
 
@@ -346,14 +316,7 @@ class FileReferenceView(APIView):
         tags=['file manager'],
         description='Deleting a file',
         responses={
-            200: {
-                'description': 'File deleted successfully',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                    'file_id': {'type': 'string'},
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied'},
@@ -363,11 +326,8 @@ class FileReferenceView(APIView):
     def delete(self, request, eventSystemId, fileId):
         """Delete file from event system"""
         try:
-            file_id = EventSystemFileService.delete_file(eventSystemId, fileId, request.user)
-            return Response({
-                "message": "File deleted successfully",
-                "file_id": str(file_id)
-            }, status=status.HTTP_200_OK)
+            EventSystemFileService.delete_file(eventSystemId, fileId, request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -405,7 +365,7 @@ class FileReferenceView(APIView):
             )
         ],
         responses={
-            200: {'description': 'File retrieved successfully'},
+            200: FileReferenceSerializer,
             400: {'description': 'File does not belong to the EventSystem'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied'},
@@ -415,7 +375,7 @@ class FileReferenceView(APIView):
     def get(self, request, eventSystemId, fileId):
         """Retrieve a file from event system"""
         try:
-            event_system = EventSystem.objects.get(uuid=eventSystemId)
+            event_system = EventSystem.objects.get(id=eventSystemId)
             file_reference = FileReference.objects.get(id=fileId)
 
             # Check if user has access to this event system
@@ -425,17 +385,8 @@ class FileReferenceView(APIView):
             # Ensure file belongs to the event system
             if not event_system.file_objects.filter(id=fileId).exists():
                 raise ValueError("File does not belong to this EventSystem.")
-
-            # Get the actual file path
-            relative_path = file_reference.url.replace(settings.MEDIA_URL, "").lstrip("/")
-            file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
-
-            # Ensure the file exists on the filesystem
-            if not os.path.exists(file_path):
-                raise ValueError(f"File not found at: {file_path}")
-
-            # Return the file as a response
-            return FileResponse(open(file_path, 'rb'), content_type='application/octet-stream', as_attachment=True)
+            serializer = FileReferenceSerializer(file_reference)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         except EventSystem.DoesNotExist:
             return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -479,15 +430,7 @@ class FileReferenceView(APIView):
             }
         },
         responses={
-            200: {
-                'description': 'File name updated successfully',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                    'new_file_name': {'type': 'string'},
-                    'file_id': {'type': 'string'},
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied'},
@@ -505,11 +448,7 @@ class FileReferenceView(APIView):
                 raise ValueError("File name is required.")
 
             updated_file = EventSystemFileService.update_file_name(eventSystemId, fileId, new_file_name, request.user)
-            return Response({
-                "message": "File name updated successfully",
-                "new_file_name" : new_file_name,
-                "file_id": str(fileId)
-            }, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         except EventSystem.DoesNotExist:
             return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -554,14 +493,7 @@ class FileSelectView(APIView):
             )
         ],
         responses={
-            200: {
-                'description': 'File selected successfully',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                    'fileId': {'type': 'string', 'format': 'uuid'},
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied'},
@@ -572,12 +504,9 @@ class FileSelectView(APIView):
         """Flag a file as selected"""
         try:
 
-            file_reference = EventSystemFileService.flag_file(eventSystemId, fileId, request.user, action='select')
+            EventSystemFileService.flag_file(eventSystemId, fileId, request.user, action='select')
 
-            return Response({
-                'message': 'File selected successfully',
-                'fileId': str(file_reference.id)
-            }, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         except EventSystem.DoesNotExist:
             return Response({"error": "Event system not found"},status=status.HTTP_404_NOT_FOUND)
@@ -617,14 +546,7 @@ class DeselectFileView(APIView):
             )
         ],
         responses={
-            200: {
-                'description': 'File flagged as deselected',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                    'file_id': {'type': 'string'}
-                }
-            },
+            204: {},
             400: {'description': 'Bad request'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied'},
@@ -637,9 +559,8 @@ class DeselectFileView(APIView):
             file_reference = EventSystemFileService.flag_file(eventSystemId, fileId, request.user, action='deselect')
 
             return Response({
-                'message': 'File deselected successfully',
-                'fileId': str(file_reference.id)
-            }, status=status.HTTP_200_OK)
+                'message': 'File deselected successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
 
         except EventSystem.DoesNotExist:
             return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)

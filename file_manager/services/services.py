@@ -184,7 +184,7 @@ class EventSystemService:
         """Update the status of an EventSystem (acTive/deactive)"""
 
         # Retrieve the EventSystem, raise ValueError if not found
-        event_system = EventSystem.objects.get(uuid=eventSystemId)
+        event_system = EventSystem.objects.get(id=eventSystemId)
 
         if user not in event_system.users.all():
             raise PermissionError("You do not have permission to deactivate this EventSystem.")

@@ -32,7 +32,7 @@ class UserDeactivateView(APIView):
             ),
         ],
         responses={
-            200: {'description': 'User deactivated successfully'},
+            204: {},
             400: {'description': 'User is already inactive'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied - Can only deactivate your own account'},
@@ -51,7 +51,7 @@ class UserDeactivateView(APIView):
             # Attempt to deactivate the user
             user = UserService.deactivate_user(user_id)
             serializer = UserDeactivateSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
             
         except UserNotFoundException:
             return Response(
@@ -91,8 +91,7 @@ class RegistrationView(APIView):
                 'description': 'User registered successfully',
                 'type': 'object',
                 'properties': {
-                    'email': {'type': 'string'},
-                    'name': {'type': 'string'},
+                    'id': {'type': 'string', 'format': 'uuid'},
                 }
             },
             400: {'description': 'Bad request - validation error'},
@@ -116,7 +115,7 @@ class RegistrationView(APIView):
             user_service = RegistrationService()
             user = user_service.register_user(user_data)
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'id': user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserUpdateView(APIView):
@@ -144,15 +143,7 @@ class UserUpdateView(APIView):
             }
         },
         responses={
-            200: {
-                'description': 'User updated successfully',
-                'type': 'object',
-                'properties': {
-                    'id': {'type': 'string', 'format': 'uuid'},
-                    'name': {'type': 'string'},
-                    'email': {'type': 'string', 'format': 'email'}
-                }
-            },
+            204: {},
             400: {'description': 'Bad request - Invalid data or incorrect current password'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied'},
@@ -185,7 +176,7 @@ class UserUpdateView(APIView):
             serializer = UserUpdateSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_204_NO_CONTENT)
             
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
@@ -210,7 +201,7 @@ class ActivateUserView(APIView):
             ),
         ],
         responses={
-            200: {'description': 'User activated successfully'},
+            204: {},
             400: {'description': 'User is already active'},
             401: {'description': 'Authentication required'},
             403: {'description': 'Permission denied - Can only activate your own account'},
@@ -230,7 +221,7 @@ class ActivateUserView(APIView):
             service_response = UserService.activate_user(user_id)
             
             if service_response['success']:
-                return Response(service_response, status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
             
@@ -479,13 +470,7 @@ class UserLogoutView(APIView):
             }
         },
         responses={
-            200: {
-                'description': 'Logout successful',
-                'type': 'object',
-                'properties': {
-                    'message': {'type': 'string'},
-                }
-            },
+            204: {},
             401: {'description': 'Authentication required'},
             404: {'description': 'User not found'},
         },
@@ -602,7 +587,7 @@ class VerifyEmailView(APIView):
             }
         },
         responses={
-            200: {'description': 'Email verified successfully'},
+            204: {},
             400: {'description': 'Invalid or expired verification code'},
             404: {'description': 'User not found'}
         }
@@ -643,9 +628,7 @@ class VerifyEmailView(APIView):
             user.token_time_to_live = None  # Clear the expiry
             user.save()
 
-            return Response({
-                'message': 'Email verified successfully'
-            }, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         except Exception as e:
             return Response({

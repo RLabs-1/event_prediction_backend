@@ -15,9 +15,9 @@ class UserSerializer(serializers.ModelSerializer):
 User = get_user_model()
 
 class UserDeactivateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['is_active']
+    pass
+    # class Meta:
+    #     model = User
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)

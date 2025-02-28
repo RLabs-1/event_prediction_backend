@@ -8,6 +8,7 @@ class EventSystemCreateSerializer(serializers.ModelSerializer):
         model = EventSystem
         fields = ['id', 'name']
 
+
 class FileReferenceSerializer(serializers.ModelSerializer):
     """
     Serializer for the FileReference model.

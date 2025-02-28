@@ -237,7 +237,7 @@ class EventSystem(models.Model):
     name = models.CharField(max_length=255)
 
     #A unique identifier for each instance, generated using Python's uuid module.
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
 
     #A many-to-many relationship with the FileReference model to allow multiple file associations.
     file_objects = models.ManyToManyField(FileReference, related_name='event_systems')
