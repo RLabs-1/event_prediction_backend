@@ -32,6 +32,9 @@ class UserInactiveException(Exception):
     """Raised when attempting to deactivate an already inactive user."""
     pass
 
+class UserDeletedException(Exception):
+    pass
+
 class InvalidUserOperationException(Exception):
     """Raised for unexpected errors or invalid operations."""
     pass
@@ -57,6 +60,15 @@ class UserService:
             return user
         except User.DoesNotExist:
             raise UserNotFoundException()
+
+    @staticmethod
+    def delete_user(user_id):
+        """Delete User"""
+        user = User.objects.get(id=user_id)
+        if user.is_deleted:
+            raise UserDeletedException("User Not Found")
+        user.is_deleted = True
+        user.save()
 
     @staticmethod
     def activate_user(user_id):

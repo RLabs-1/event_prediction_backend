@@ -4,7 +4,7 @@ from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from user_management.services.services import RegistrationService, UserService, JWTService
+from user_management.services.services import RegistrationService, UserService, JWTService, UserDeletedException
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
 from core.models import User
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
@@ -17,57 +17,42 @@ from drf_spectacular.types import OpenApiTypes
 from django.utils import timezone
 
 
-class UserDeactivateView(APIView):
-    permission_classes = [IsAuthenticated]
-    
+class UserDeleteView(APIView):
+    permissions = [IsAuthenticated]
+
     @extend_schema(
         tags=['User Management'],
-        description='Deactivate your own account.',
+        description='Delete User.',
         parameters=[
             OpenApiParameter(
                 name='user_id',
                 type=OpenApiTypes.UUID,
                 location=OpenApiParameter.PATH,
-                description='UUID of your account to deactivate'
+                description='UUID of your account to delete'
             ),
         ],
         responses={
             204: {},
-            400: {'description': 'User is already inactive'},
             401: {'description': 'Authentication required'},
-            403: {'description': 'Permission denied - Can only deactivate your own account'},
+            403: {'description': 'Permission denied - Can only delete your own account'},
             404: {'description': 'User not found'},
         }
     )
-    def patch(self, request, user_id):
+
+    def delete(self,request, user_id):
+        """Delete User"""
         try:
-            # Check if user is trying to deactivate their own account
             if request.user.id != user_id:
                 return Response(
-                    {"error": "You can only deactivate your own account"},
+                    {"error": "You can only delete your own account"},
                     status=status.HTTP_403_FORBIDDEN
                 )
-
-            # Attempt to deactivate the user
-            user = UserService.deactivate_user(user_id)
-            serializer = UserDeactivateSerializer(user)
+            UserService.delete_user(user_id)
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
-        except UserNotFoundException:
-            return Response(
-                {'detail': 'User not found.'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except UserInactiveException as e:
-            return Response(
-                {'detail': str(e)}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception as e:
-            return Response(
-                {'detail': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+
+        except UserDeletedException or UserNotFoundException:
+            return Response({"error": "User Not Found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 User = get_user_model()
 
@@ -186,56 +171,7 @@ class UserUpdateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-class ActivateUserView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    @extend_schema(
-        tags=['User Management'],
-        description='Activate your own account.',
-        parameters=[
-            OpenApiParameter(
-                name='user_id',
-                type=OpenApiTypes.UUID,
-                location=OpenApiParameter.PATH,
-                description='UUID of your account to activate'
-            ),
-        ],
-        responses={
-            204: {},
-            400: {'description': 'User is already active'},
-            401: {'description': 'Authentication required'},
-            403: {'description': 'Permission denied - Can only activate your own account'},
-            404: {'description': 'User not found'},
-        }
-    )
-    def patch(self, request, user_id):
-        try:
-            # Check if user is trying to activate their own account
-            if request.user.id != user_id:
-                return Response(
-                    {"error": "You can only activate your own account"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            # Try to activate the user
-            service_response = UserService.activate_user(user_id)
-            
-            if service_response['success']:
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response(service_response, status=status.HTTP_400_BAD_REQUEST)
-            
-        except UserNotFoundException as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
+
 class UserLoginView(APIView):
     @extend_schema(
         tags=['User Management'],

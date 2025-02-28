@@ -66,6 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         'EventSystem',
         related_name='associated_users'
     )
+    is_deleted = models.BooleanField(default=False)
     #A DateTime field to store the time when the verification code was generated.
     token_time_to_live = models.DateTimeField(null=True, blank=True)
     #A field to store the generated verification code.
