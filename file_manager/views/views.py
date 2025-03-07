@@ -7,6 +7,7 @@ import os
 from rest_framework.permissions import IsAuthenticated
 
 from core.models import EventSystem, EventStatus, FileReference
+from userSystemPermission.models import UserSystemPermissions
 from file_manager.services.services import EventSystemService, EventSystemFileService
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, FileReferenceSerializer, EventSystemCreateSerializer
 
@@ -378,9 +379,20 @@ class FileReferenceView(APIView):
             event_system = EventSystem.objects.get(id=eventSystemId)
             file_reference = FileReference.objects.get(id=fileId)
 
-            # Check if user has access to this event system
-            if (request.user not in event_system.users.all()) and (not request.user.is_superuser):
+            try:
+                user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            except UserSystemPermissions.DoesNotExist:
                 raise PermissionError("You do not have access to this file.")
+
+            # Define allowed roles (Admins, Owners, Viewers)
+            allowed_roles = {
+                UserSystemPermissions.PermissionLevel.ADMIN,
+                UserSystemPermissions.PermissionLevel.OWNER,
+                UserSystemPermissions.PermissionLevel.VIEWER
+            }
+
+            if user_permission.permission_level not in allowed_roles:
+                raise PermissionError("You do not have permission to retrieve this file.")
 
             # Ensure file belongs to the event system
             if not event_system.file_objects.filter(id=fileId).exists():
