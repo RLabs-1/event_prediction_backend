@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'core',
+    'userSystemPermission',
 ]
 
 AUTH_USER_MODEL = 'core.User'
