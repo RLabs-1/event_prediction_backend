@@ -6,8 +6,7 @@ from django.conf import settings
 import os
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import EventSystem, EventStatus, FileReference
-from userSystemPermission.models import UserSystemPermissions
+from core.models import EventSystem, EventStatus, FileReference, UserSystemPermissions
 from file_manager.services.services import EventSystemService, EventSystemFileService
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, FileReferenceSerializer, EventSystemCreateSerializer
 
@@ -619,11 +618,21 @@ class EventSystemFileListView(APIView):
 
         try:
             # Get the event system
-            event_system = EventSystem.objects.get(uuid=eventSystemId)
+            event_system = EventSystem.objects.get(id=eventSystemId)
 
-            # Ensure user has access to the event system
-            if request.user not in event_system.users.all():
-                raise PermissionError("You do not have permission to view these files.")
+            try:
+                user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            except UserSystemPermissions.DoesNotExist:
+                raise PermissionError("You do not have permission to view files.")
+
+            allowed_roles = {
+                UserSystemPermissions.PermissionLevel.ADMIN,
+                UserSystemPermissions.PermissionLevel.OWNER,
+                UserSystemPermissions.PermissionLevel.VIEWER
+            }
+
+            if user_permission.permission_level not in allowed_roles:
+                raise PermissionError("You do not have permission to view files.")
 
             # Retrieve files associated with this event system
             files = event_system.file_objects.all()

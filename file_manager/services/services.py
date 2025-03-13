@@ -1,9 +1,8 @@
-from core.models import EventSystem, FileReference
+from core.models import EventSystem, FileReference, UserSystemPermissions
 import os
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from userSystemPermission.models import UserSystemPermissions
 
 class EventSystemFileService:
     @staticmethod
@@ -65,9 +64,8 @@ class EventSystemFileService:
         except UserSystemPermissions.DoesNotExist:
             raise PermissionError("You do not have permission to delete files from this EventSystem.")
 
-        # Only allow users with 'Editor', 'Admin', or 'Owner' permissions to delete files
+        # Only allow users with 'Admin', or 'Owner' permissions to delete files
         allowed_roles = {
-            UserSystemPermissions.PermissionLevel.EDITOR,
             UserSystemPermissions.PermissionLevel.ADMIN,
             UserSystemPermissions.PermissionLevel.OWNER
         }
