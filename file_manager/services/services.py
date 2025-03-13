@@ -9,7 +9,7 @@ class EventSystemFileService:
     def upload_file(file, event_system_id, user):
         """Save file to local storage and create a FileReference entry."""
 
-        event_system = EventSystem.objects.get(uuid=event_system_id)
+        event_system = EventSystem.objects.get(id=event_system_id)
 
         # Check if the authenticated user is part of the event system
         if user not in event_system.users.all():
@@ -45,7 +45,7 @@ class EventSystemFileService:
     def delete_file(event_system_id, file_id, user):
         """Deletes a file from storage and removes its reference in the database."""
 
-        event_system = EventSystem.objects.get(uuid=event_system_id)
+        event_system = EventSystem.objects.get(id=event_system_id)
         file_reference = FileReference.objects.get(id=file_id)
 
         # Check if the authenticated user is part of the event system
@@ -74,7 +74,7 @@ class EventSystemFileService:
     def update_file_name(event_system_id, file_id, new_file_name, user):
         """Update the file name for the given event system and file ID."""
 
-        event_system = EventSystem.objects.get(uuid=event_system_id)
+        event_system = EventSystem.objects.get(id=event_system_id)
         file_reference = FileReference.objects.get(id=file_id)
 
         # Check if the authenticated user is part of the event system
@@ -121,7 +121,7 @@ class EventSystemFileService:
         if action not in ['select', 'deselect']:
             raise ValueError("Invalid action. Action must be either 'select' or 'deselect'.")
 
-        event_system = EventSystem.objects.get(uuid=event_system_id)
+        event_system = EventSystem.objects.get(id=event_system_id)
         file_reference = FileReference.objects.get(id=file_id)
 
         # Check if the authenticated user is part of the event system
@@ -145,24 +145,6 @@ class EventSystemFileService:
         file_reference.save()
         return file_reference
 
-    @staticmethod
-    def select_file(event_system_id, file_id, user):
-        """
-        Select a file in an EventSystem
-        """
-        event_system = get_object_or_404(EventSystem, uuid=event_system_id)
-        file = get_object_or_404(File, uuid=file_id)
-        
-        if not event_system.can_user_modify(user):
-            raise PermissionDenied("User does not have permission to modify this event system")
-        
-        if file not in event_system.files.all():
-            raise ValueError("File does not belong to this event system")
-        
-        file.is_selected = True
-        file.save()
-        
-        return file
 
 class EventSystemService:
     @staticmethod
@@ -190,7 +172,7 @@ class EventSystemService:
             raise PermissionError("You do not have permission to deactivate this EventSystem.")
 
         if event_system.status == status:
-            raise ValueError(f"EventSystem is already {status.lower()}.")
+            raise ValueError(f"EventSystem is already {EventSystem.EventStatus(status).label}.")
 
         # Update the status and save
         event_system.status = status

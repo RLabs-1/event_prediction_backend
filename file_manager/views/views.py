@@ -6,7 +6,7 @@ from django.conf import settings
 import os
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import EventSystem, EventStatus, FileReference
+from core.models import EventSystem, FileReference
 from file_manager.services.services import EventSystemService, EventSystemFileService
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, FileReferenceSerializer, EventSystemCreateSerializer
 
@@ -163,7 +163,7 @@ class ActivateEventSystemView(APIView):
         """Activate an EventSystem."""
         try:
             # Attempt to update the status of the EventSystem
-            event_system = EventSystemService.update_status(eventSystemId, EventStatus.ACTIVE, request.user)
+            event_system = EventSystemService.update_status(eventSystemId, EventSystem.EventStatus.ACTIVE, request.user)
             return Response({
                 "message": "EventSystem activated successfully."
             }, status=status.HTTP_204_NO_CONTENT)
@@ -218,7 +218,7 @@ class DeactivateEventSystemView(APIView):
         print("Trying to patch")
         try:
             # Attempt to update the status of the EventSystem
-            event_system = EventSystemService.update_status(eventSystemId, EventStatus.INACTIVE, request.user)
+            event_system = EventSystemService.update_status(eventSystemId, EventSystem.EventStatus.INACTIVE, request.user)
             return Response( status=status.HTTP_204_NO_CONTENT)
 
         except ValueError as e:
@@ -607,7 +607,7 @@ class EventSystemFileListView(APIView):
 
         try:
             # Get the event system
-            event_system = EventSystem.objects.get(uuid=eventSystemId)
+            event_system = EventSystem.objects.get(id=eventSystemId)
 
             # Ensure user has access to the event system
             if request.user not in event_system.users.all():
