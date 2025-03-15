@@ -282,3 +282,38 @@ class UserToken(models.Model):
 
     def __str__(self):
         return f"Token for {self.user.email}"
+
+
+class UserSystemPermissions(models.Model):
+    """
+    Model to manage user permissions for event systems
+    """
+
+    class PermissionLevel(models.IntegerChoices):
+        VIEWER = 1, 'Viewer'
+        EDITOR = 2, 'Editor'
+        ADMIN = 3, 'Admin'
+        OWNER = 4, 'Owner'
+
+    # Remove primary_key=True from both fields
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+    )
+
+    event_system = models.ForeignKey(
+        EventSystem,
+        on_delete=models.CASCADE,
+    )
+
+    permission_level = models.IntegerField(
+        choices=PermissionLevel.choices,
+        default=PermissionLevel.VIEWER
+    )
+
+    class Meta:
+        # This will effectively make the combination a composite primary key
+        unique_together = ('user', 'event_system')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.event_system.name} - {self.get_permission_level_display()}"
