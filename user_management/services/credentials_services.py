@@ -1,6 +1,6 @@
 from core.model.credentials_model import Credentials
 
-def CreateCredentials(access_key, secret_key, storage, user):
+def create_credentials(access_key, secret_key, storage, user):
     """Handles creating and saving credentials with encryption."""
     credentials = Credentials(
         access_key=access_key,
