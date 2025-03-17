@@ -26,7 +26,7 @@ class Credentials(models.Model):
     def save(self, *args, **kwargs):
         """Ensure the secret_key is always hashed before saving"""
         if not self.secret_key.startswith('pbkdf2_sha256$'):
-            self.secret_key = make_password(self.secret_key)
+            self.set_secret_key(self.secret_key)
         super().save(*args, **kwargs)
 
 
