@@ -15,7 +15,9 @@ from user_management.exceptions.custom_exceptions import (
 )
 from drf_spectacular.types import OpenApiTypes
 from django.utils import timezone
-
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 class UserDeleteView(APIView):
     permissions = [IsAuthenticated]
@@ -463,7 +465,9 @@ class CurrentUserView(APIView):
         return Response({
             'id': user.id,
             'email': user.email,
+            'uuid': str(user.id),  # Use user.id (UUID) as the UUID
             'name': user.name,
+            'is_verified': user.is_verified,
             'is_active': user.is_active,
             'last_login': user.last_login
         }, status=status.HTTP_200_OK)
