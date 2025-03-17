@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from user_management.serializers.credentials_serializers import CredentialsSerializer
-from user_management.services.credentials_services import CreateCredentials
+from user_management.services.credentials_services import create_credentials
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 
@@ -24,7 +24,7 @@ class AddCredentialsView(APIView):
 
         serializer = CredentialsSerializer(data=request.data)
         if serializer.is_valid():
-            credentials = CreateCredentials(
+            credentials = create_credentials(
                 serializer.validated_data['access_key'],
                 serializer.validated_data['secret_key'],
                 serializer.validated_data['storage'],
