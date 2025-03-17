@@ -10,6 +10,7 @@ from user_management.exceptions.custom_exceptions import (
 )
 from core.model.credentials_model import Credentials
 
+
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
 
@@ -42,7 +43,6 @@ class UserManager(BaseUserManager):
             name=name,
             **extra_fields
         )
-
 
 class User(AbstractBaseUser, PermissionsMixin):
     """
