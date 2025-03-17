@@ -76,6 +76,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_password_reset_pending = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
+    credentials = models.ManyToManyField(
+        Credentials,
+        related_name="users",
+        blank=True  # means users may not have credentials initially
+    )
+
+
     def is_token_expired(self):
         """Check if the verification code has expired"""
         if not self.token_time_to_live:
