@@ -63,3 +63,18 @@ class UpdateCredentialView(generics.UpdateAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+class CredentialDeleteView(DestroyAPIView):
+    queryset = Credentials.objects.all()
+    lookup_field = "credentialId"
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        credential_id = kwargs.get('credentialId')
+        try:
+            credential = Credentials.objects.get(id=credential_id)
+            credential.delete()
+            return Response({"message": "Credential deleted successfully"}, status=status.HTTP_202_ACCEPTED)
+        except Credentials.DoesNotExist:
+            return Response({"error": "Credential not found"}, status=status.HTTP_404_NOT_FOUND)
