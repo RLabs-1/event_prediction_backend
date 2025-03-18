@@ -151,7 +151,7 @@ class UserUpdateView(APIView):
             user = User.objects.get(id=user_id)
             
             # Prevent updating email or staff status
-            if 'email' in request.data or 'is_staff' in request.data or 'is_active' in request.data:
+            if 'email' in request.data or 'is_staff' in request.data:
                 return Response(
                     {"error": "Cannot update email, staff status, or active status"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -219,10 +219,8 @@ class UserLoginView(APIView):
                     return Response({
                         "error": "Please verify your email before logging in. Check your inbox for the verification code."
                     }, status=status.HTTP_403_FORBIDDEN)
-                
-                # Set user as active when logging in
-                user.is_active = True
-                user.save()
+
+                # user.save()
                 
                 tokens = JWTService.create_token(user)
                 return Response({
@@ -390,52 +388,6 @@ def user_view(request):
 ##Bet-30##  
 
 
-class UserLogoutView(APIView):
-    """
-    Handles user logout and deactivates the account.
-    """
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        tags=['User Management'],
-        description='Logout user and deactivate account',
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {},  # Empty since we don't need request body
-            }
-        },
-        responses={
-            204: {},
-            401: {'description': 'Authentication required'},
-            404: {'description': 'User not found'},
-        },
-        examples=[
-            OpenApiExample(
-                'Logout Example',
-                value={},  # Empty object as we only need the token
-                request_only=True
-            )
-        ]
-    )
-    def post(self, request):
-        try:
-            user = request.user
-            # Remove tokens from database
-            JWTService.remove_tokens(user)
-            
-            # Set user as inactive
-            user.is_active = False
-            user.save()
-            
-            return Response({
-                "message": "Logged out successfully"
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -451,7 +403,6 @@ class CurrentUserView(APIView):
                     'id': {'type': 'integer'},
                     'email': {'type': 'string', 'format': 'email'},
                     'name': {'type': 'string'},
-                    'is_active': {'type': 'boolean'},
                     'last_login': {'type': 'string', 'format': 'date-time'},
                 }
             },
@@ -464,7 +415,6 @@ class CurrentUserView(APIView):
             'id': user.id,
             'email': user.email,
             'name': user.name,
-            'is_active': user.is_active,
             'last_login': user.last_login
         }, status=status.HTTP_200_OK)
 
@@ -559,7 +509,6 @@ class VerifyEmailView(APIView):
 
             # Verify user
             user.is_verified = True
-            user.is_active = True
             user.verification_code = None  # Clear the code
             user.token_time_to_live = None  # Clear the expiry
             user.save()

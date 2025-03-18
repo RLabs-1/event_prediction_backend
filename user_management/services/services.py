@@ -193,12 +193,10 @@ class RegistrationService:
             if User.objects.filter(email=user_data['email']).exists():
                 raise UserAlreadyExistsException()
 
-            # Create user with is_active=False until verified
             user = User.objects.create_user(
                 email=user_data['email'],
                 password=user_data['password'],
                 name=user_data.get('name', ''),
-                is_active=False,
                 is_verified=False
             )
 
