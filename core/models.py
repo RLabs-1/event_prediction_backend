@@ -8,6 +8,7 @@ from user_management.exceptions.custom_exceptions import (
     UserStateError,
     UserNotVerifiedError
 )
+from core.model.credentials_model import Credentials
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
@@ -72,6 +73,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     #A Boolean field to track whether a password reset is pending.
     is_password_reset_pending = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+
+    credentials = models.ManyToManyField(
+        Credentials,
+        related_name="users",
+        blank=True  # means users may not have credentials initially
+    )
+
 
     def is_token_expired(self):
         """Check if the verification code has expired"""
@@ -315,3 +323,5 @@ class UserSystemPermissions(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.event_system.name} - {self.get_permission_level_display()}"
+
+
