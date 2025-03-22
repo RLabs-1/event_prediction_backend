@@ -6,16 +6,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService, UserDeletedException
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
-from core.models import User
+from core.models import User,EmailVerification
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from django.http import JsonResponse
 from user_management.exceptions.custom_exceptions import (
     UserNotFoundException,
     UserInactiveException,
 )
+from rest_framework_simplejwt.exceptions import TokenError
 from drf_spectacular.types import OpenApiTypes
 from django.utils import timezone
 
+from rest_framework_simplejwt.tokens import AccessToken
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import AuthenticationFailed
 
 class UserDeleteView(APIView):
     permissions = [IsAuthenticated]
@@ -458,6 +462,8 @@ class CustomTokenRefreshView(APIView):
                 'error': str(e)
             }, status=status.HTTP_401_UNAUTHORIZED)
 
+
+
 class VerifyEmailView(APIView):
     @extend_schema(
         tags=['User Management'],
@@ -489,29 +495,49 @@ class VerifyEmailView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                return Response({
-                    'error': 'User not found'
-                }, status=status.HTTP_404_NOT_FOUND)
+                userVerify = EmailVerification.objects.get(email=email)
+            except EmailVerification.DoesNotExist:
+                 return Response({
+                      'error': 'Verification code not found'
+                       }, status=status.HTTP_400_BAD_REQUEST)
+            
 
             # Check verification code
-            if not user.verification_code or user.verification_code != verification_code:
+            if not userVerify.verification_code:
                 return Response({
-                    'error': 'Invalid verification code'
+                    'error': 'Please request a verification code'
                 }, status=status.HTTP_400_BAD_REQUEST)
-
+            
+            if not userVerify.verification_code == verification_code:
+                            userVerify.decrement_tries()
+                            return Response({
+                                'error': 'Invalid verification code'
+                            }, status=status.HTTP_400_BAD_REQUEST)
+            
+            
             # Check if code is expired (1 hour)
-            if user.is_token_expired():
+            if userVerify.is_token_expired():
                 return Response({
                     'error': 'Verification code has expired'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+
+            if userVerify.tries_left <= 0:
+                 userVerify.delete_oldcode()
+                 return Response({
+                     'error': 'No tries left for this verification code. Please request a new one.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+             
+
             # Verify user
+            user=User.objects.get(email=email)
             user.is_verified = True
-            user.verification_code = None  # Clear the code
-            user.token_time_to_live = None  # Clear the expiry
+            userVerify.verification_code = None  # Clear the code
+            userVerify.token_time_to_live = None  # Clear the expiry
+
             user.save()
+            userVerify.save()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
