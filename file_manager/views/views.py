@@ -55,7 +55,7 @@ class EventSystemCreateView(APIView):
     def post(self, request):
         """Create a new event system for the authenticated user."""
         serializer = EventSystemCreateSerializer(data=request.data)
-
+        
         if serializer.is_valid():
             try:
                 event_system = EventSystemService.create_event_system(
@@ -101,13 +101,18 @@ class EventSystemNameUpdateView(APIView):
         }
     )
     def patch(self, request, eventSystemId):
+
         try:
-
             event_system = EventSystem.objects.get(id=eventSystemId)
-
-            # Check if the user is authorized to update this EventSystem
-            if request.user not in event_system.users.all():
-                raise PermissionError("Permission denied – You do not have permission to update this EventSystem.")
+            user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            allowed_roles = {
+                 UserSystemPermissions.PermissionLevel.ADMIN,
+                 UserSystemPermissions.PermissionLevel.OWNER,
+                 UserSystemPermissions.PermissionLevel.EDITOR
+             }
+        
+            if user_permission.permission_level not in allowed_roles:
+                 raise PermissionError("You do not have permission to do this action.")
 
             # Use serializer for validation
             serializer = EventSystemNameUpdateSerializer(event_system, data=request.data, partial=True)
@@ -122,6 +127,10 @@ class EventSystemNameUpdateView(APIView):
             updated_event_system = EventSystemService.update_event_system_name(event_system, serializer.validated_data['name'])
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+        except UserSystemPermissions.DoesNotExist:
+            return Response({"error": "User permissions not found"}, status=status.HTTP_403_FORBIDDEN)
+        
         except EventSystem.DoesNotExist:
             return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -133,6 +142,8 @@ class EventSystemNameUpdateView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
 
 class ActivateEventSystemView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -162,12 +173,26 @@ class ActivateEventSystemView(APIView):
     def patch(self, request, eventSystemId):
         """Activate an EventSystem."""
         try:
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            allowed_roles = {
+                 UserSystemPermissions.PermissionLevel.ADMIN,
+                 UserSystemPermissions.PermissionLevel.OWNER
+             }
+        
+            if user_permission.permission_level not in allowed_roles:
+                 raise PermissionError("You do not have permission to do this action.")
+            
             # Attempt to update the status of the EventSystem
             event_system = EventSystemService.update_status(eventSystemId, EventStatus.ACTIVE, request.user)
-            return Response({
-                "message": "EventSystem activated successfully."
-            }, status=status.HTTP_204_NO_CONTENT)
-
+            
+            return Response( status=status.HTTP_204_NO_CONTENT)
+            
+        
+        
+        except UserSystemPermissions.DoesNotExist:
+            return Response({"error": "User permissions not found"}, status=status.HTTP_403_FORBIDDEN)
+        
         except ValueError as e:
             # Handle invalid values or data
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -215,12 +240,25 @@ class DeactivateEventSystemView(APIView):
     )
     def patch(self, request, eventSystemId):
         """Deactivate an EventSystem."""
-        print("Trying to patch")
         try:
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            allowed_roles = {
+                 UserSystemPermissions.PermissionLevel.ADMIN,
+                 UserSystemPermissions.PermissionLevel.OWNER
+             }
+        
+            if user_permission.permission_level not in allowed_roles:
+                 raise PermissionError("You do not have permission to do this action.")
+            
             # Attempt to update the status of the EventSystem
             event_system = EventSystemService.update_status(eventSystemId, EventStatus.INACTIVE, request.user)
             return Response( status=status.HTTP_204_NO_CONTENT)
 
+
+        except UserSystemPermissions.DoesNotExist:
+            return Response({"error": "User permissions not found"}, status=status.HTTP_403_FORBIDDEN)
+        
         except ValueError as e:
             # Handle invalid values or data
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -615,24 +653,26 @@ class EventSystemFileListView(APIView):
     )
     def get(self, request, eventSystemId):
         """Retrieve all files for a given EventSystem."""
-
         try:
             # Get the event system
             event_system = EventSystem.objects.get(id=eventSystemId)
 
             try:
                 user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+                
+                allowed_roles = {
+                    UserSystemPermissions.PermissionLevel.ADMIN,
+                    UserSystemPermissions.PermissionLevel.OWNER,
+                    UserSystemPermissions.PermissionLevel.VIEWER
+                }
+
+                if user_permission.permission_level not in allowed_roles:
+                    return Response({"error": "You do not have permission to view files."}, 
+                                status=status.HTTP_403_FORBIDDEN)
+                    
             except UserSystemPermissions.DoesNotExist:
-                raise PermissionError("You do not have permission to view files.")
-
-            allowed_roles = {
-                UserSystemPermissions.PermissionLevel.ADMIN,
-                UserSystemPermissions.PermissionLevel.OWNER,
-                UserSystemPermissions.PermissionLevel.VIEWER
-            }
-
-            if user_permission.permission_level not in allowed_roles:
-                raise PermissionError("You do not have permission to view files.")
+                return Response({"error": "You do not have permission to view files."}, 
+                            status=status.HTTP_403_FORBIDDEN)
 
             # Retrieve files associated with this event system
             files = event_system.file_objects.all()
@@ -647,14 +687,10 @@ class EventSystemFileListView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except EventSystem.DoesNotExist:
-            return Response({"error": "EventSystem not found."},status=status.HTTP_404_NOT_FOUND,)
-
-        except PermissionError as e:
-            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "EventSystem not found."}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
             return Response(
                 {"error": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
