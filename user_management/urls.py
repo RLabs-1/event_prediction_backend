@@ -6,7 +6,6 @@ from .views.views import (
     ResetForgotPasswordView,
     UserDeleteView,
     ForgotPasswordView,
-    UserLogoutView,
     CurrentUserView,
     VerifyEmailView,
 )

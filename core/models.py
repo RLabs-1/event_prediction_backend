@@ -30,8 +30,7 @@ class UserManager(BaseUserManager):
         """Creates a superuser"""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', False)
-        
+
         if not name:
             name = email  # Default name to email if not provided
 
@@ -56,7 +55,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=False)  # For login/logout status
     valid_account = models.BooleanField(default=True)  # For account activation status
     is_staff = models.BooleanField(default=False)
     rating = models.FloatField(default=0.0)
