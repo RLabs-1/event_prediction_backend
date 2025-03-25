@@ -8,6 +8,7 @@ from user_management.exceptions.custom_exceptions import (
     UserStateError,
     UserNotVerifiedError
 )
+from core.model.credentials_model import Credentials
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
