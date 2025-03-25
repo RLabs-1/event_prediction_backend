@@ -7,7 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         # fields = '__all__'
-        fields = ['email', 'name', 'is_active', 'is_staff', 'rating', 'num_of_usages', 'is_verified']
+        fields = ['email', 'name', 'is_staff', 'rating', 'num_of_usages', 'is_verified']
 
 
 
@@ -31,7 +31,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         user = User(
             email=validated_data['email'],
             name=validated_data['name'],
-            is_active=False,
             is_staff=False
         )
         # user.set_password(validated_data['password'])
@@ -48,8 +47,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 
             'name', 
-            'email', 
-            'is_active', 
+            'email',
             'is_staff', 
             'rating', 
             'num_of_usages',
