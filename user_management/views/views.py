@@ -6,16 +6,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user_management.services.services import RegistrationService, UserService, JWTService, UserDeletedException
 from user_management.serializers.serializers import RegistrationSerializer, UserUpdateSerializer, UserDeactivateSerializer
-from core.models import User
+from core.models import User,EmailVerification
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from django.http import JsonResponse
 from user_management.exceptions.custom_exceptions import (
     UserNotFoundException,
     UserInactiveException,
 )
+from rest_framework_simplejwt.exceptions import TokenError
 from drf_spectacular.types import OpenApiTypes
 from django.utils import timezone
 
+from rest_framework_simplejwt.tokens import AccessToken
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import AuthenticationFailed
 
 class UserDeleteView(APIView):
     permissions = [IsAuthenticated]
@@ -151,7 +155,7 @@ class UserUpdateView(APIView):
             user = User.objects.get(id=user_id)
             
             # Prevent updating email or staff status
-            if 'email' in request.data or 'is_staff' in request.data or 'is_active' in request.data:
+            if 'email' in request.data or 'is_staff' in request.data:
                 return Response(
                     {"error": "Cannot update email, staff status, or active status"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -219,10 +223,8 @@ class UserLoginView(APIView):
                     return Response({
                         "error": "Please verify your email before logging in. Check your inbox for the verification code."
                     }, status=status.HTTP_403_FORBIDDEN)
-                
-                # Set user as active when logging in
-                user.is_active = True
-                user.save()
+
+                # user.save()
                 
                 tokens = JWTService.create_token(user)
                 return Response({
@@ -390,52 +392,6 @@ def user_view(request):
 ##Bet-30##  
 
 
-class UserLogoutView(APIView):
-    """
-    Handles user logout and deactivates the account.
-    """
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        tags=['User Management'],
-        description='Logout user and deactivate account',
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {},  # Empty since we don't need request body
-            }
-        },
-        responses={
-            204: {},
-            401: {'description': 'Authentication required'},
-            404: {'description': 'User not found'},
-        },
-        examples=[
-            OpenApiExample(
-                'Logout Example',
-                value={},  # Empty object as we only need the token
-                request_only=True
-            )
-        ]
-    )
-    def post(self, request):
-        try:
-            user = request.user
-            # Remove tokens from database
-            JWTService.remove_tokens(user)
-            
-            # Set user as inactive
-            user.is_active = False
-            user.save()
-            
-            return Response({
-                "message": "Logged out successfully"
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -451,7 +407,6 @@ class CurrentUserView(APIView):
                     'id': {'type': 'integer'},
                     'email': {'type': 'string', 'format': 'email'},
                     'name': {'type': 'string'},
-                    'is_active': {'type': 'boolean'},
                     'last_login': {'type': 'string', 'format': 'date-time'},
                 }
             },
@@ -464,7 +419,6 @@ class CurrentUserView(APIView):
             'id': user.id,
             'email': user.email,
             'name': user.name,
-            'is_active': user.is_active,
             'last_login': user.last_login
         }, status=status.HTTP_200_OK)
 
@@ -508,6 +462,8 @@ class CustomTokenRefreshView(APIView):
                 'error': str(e)
             }, status=status.HTTP_401_UNAUTHORIZED)
 
+
+
 class VerifyEmailView(APIView):
     @extend_schema(
         tags=['User Management'],
@@ -539,30 +495,49 @@ class VerifyEmailView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                return Response({
-                    'error': 'User not found'
-                }, status=status.HTTP_404_NOT_FOUND)
+                userVerify = EmailVerification.objects.get(email=email)
+            except EmailVerification.DoesNotExist:
+                 return Response({
+                      'error': 'Verification code not found'
+                       }, status=status.HTTP_400_BAD_REQUEST)
+            
 
             # Check verification code
-            if not user.verification_code or user.verification_code != verification_code:
+            if not userVerify.verification_code:
                 return Response({
-                    'error': 'Invalid verification code'
+                    'error': 'Please request a verification code'
                 }, status=status.HTTP_400_BAD_REQUEST)
-
+            
+            if not userVerify.verification_code == verification_code:
+                            userVerify.decrement_tries()
+                            return Response({
+                                'error': 'Invalid verification code'
+                            }, status=status.HTTP_400_BAD_REQUEST)
+            
+            
             # Check if code is expired (1 hour)
-            if user.is_token_expired():
+            if userVerify.is_token_expired():
                 return Response({
                     'error': 'Verification code has expired'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+
+            if userVerify.tries_left <= 0:
+                 userVerify.delete_oldcode()
+                 return Response({
+                     'error': 'No tries left for this verification code. Please request a new one.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+             
+
             # Verify user
+            user=User.objects.get(email=email)
             user.is_verified = True
-            user.is_active = True
-            user.verification_code = None  # Clear the code
-            user.token_time_to_live = None  # Clear the expiry
+            userVerify.verification_code = None  # Clear the code
+            userVerify.token_time_to_live = None  # Clear the expiry
+
             user.save()
+            userVerify.save()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 

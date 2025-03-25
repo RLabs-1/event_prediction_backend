@@ -17,7 +17,7 @@ from user_management.exceptions.custom_exceptions import (
 )
 from .email_service import EmailService
 from core.models import UserToken
-
+from core.models import EmailVerification
 # Set up logger to track errors in User Management
 logger = logging.getLogger(__name__)
 
@@ -193,21 +193,25 @@ class RegistrationService:
             if User.objects.filter(email=user_data['email']).exists():
                 raise UserAlreadyExistsException()
 
+            user_email=user_data['email']
+            
             # Create user with is_active=False until verified
             user = User.objects.create_user(
                 email=user_data['email'],
                 password=user_data['password'],
                 name=user_data.get('name', ''),
-                is_active=False,
                 is_verified=False
+            )
+            userVerify = EmailVerification.objects.create(
+                email=user_email
             )
 
             # Send welcome email with verification code
             try:
                 verification_code = EmailService.send_email(user.email)
-                user.verification_code = verification_code
-                user.token_time_to_live = timezone.now()
-                user.save()
+                userVerify.token_time_to_live=timezone.now()
+                userVerify.verification_code = verification_code
+                userVerify.save()
             except Exception as e:
                 logger.error(f"Error sending verification email: {str(e)}")
                 # Continue with registration even if email fails
