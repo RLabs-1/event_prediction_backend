@@ -18,6 +18,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'core',
+    'corsheaders',
+    'django_celery_beat',
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -30,7 +32,20 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL for Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
 
 ROOT_URLCONF = 'log_prediction_backend.urls'
 
