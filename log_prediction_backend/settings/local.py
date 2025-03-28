@@ -4,12 +4,12 @@ from .base import *
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db2',
+        'NAME': 'event_prediction_db',
         'USER': 'postgres',
-        'PASSWORD': 'adankh313',
+        'PASSWORD': '147258magd',
         'HOST': 'localhost',
-        'PORT': '5432',
-    }
+        'PORT':'5432',
+}
 }
 
 
