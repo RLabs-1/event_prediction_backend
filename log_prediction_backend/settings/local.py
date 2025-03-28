@@ -4,7 +4,7 @@ from .base import *
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db',
+        'NAME': 'event_prediction_db2',
         'USER': 'postgres',
         'PASSWORD': 'adankh313',
         'HOST': 'localhost',
