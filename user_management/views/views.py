@@ -165,15 +165,18 @@ class UserUpdateView(APIView):
     def patch(self, request, user_id):
         try:
             logger.debug(f"Update attempt for user: {request.user.email}")
-            # Get the user from the token
             requesting_user = request.user
             
-            # Check if user is trying to update their own information
+            if requesting_user.is_deleted:
+                logger.warning(f"Deleted user attempted to update profile: {requesting_user.email}")
+                return Response({
+                    "error": "This account has been deleted."
+                }, status=status.HTTP_403_FORBIDDEN)
+            
             if requesting_user.id != user_id:
-                return Response(
-                    {"error": "You can only update your own information"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                return Response({
+                    "error": "You can only update your own information"
+                }, status=status.HTTP_403_FORBIDDEN)
             
             # Get the user to update (should be the same as requesting user)
             user = User.objects.get(id=user_id)
@@ -246,6 +249,12 @@ class UserLoginView(APIView):
             user = authenticate(request, username=email, password=password)
             
             if user:
+                if user.is_deleted:
+                    logger.warning(f"Deleted user attempted to login: {email}")
+                    return Response({
+                        "error": "This account has been deleted."
+                    }, status=status.HTTP_403_FORBIDDEN)
+
                 if not user.is_verified:
                     logger.warning(f"Unverified user attempted to login: {email}")
                     return Response({
@@ -304,6 +313,13 @@ class ForgotPasswordView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             try:
+                user = User.objects.get(email=email)
+                if user.is_deleted:
+                    logger.warning(f"Password reset attempted for deleted account: {email}")
+                    return Response({
+                        "error": "This account has been deleted."
+                    }, status=status.HTTP_403_FORBIDDEN)
+                
                 service_response = UserService.initiate_password_reset(email)
                 logger.info(f"Password reset email sent to: {email}")
                 return Response(service_response, status=status.HTTP_200_OK)
@@ -389,6 +405,12 @@ class ResetForgotPasswordView(APIView):
                 # Get user by email
                 user = User.objects.get(email=email)
 
+                if user.is_deleted:
+                    logger.warning(f"Password reset attempted for deleted account: {email}")
+                    return Response({
+                        "error": "This account has been deleted."
+                    }, status=status.HTTP_403_FORBIDDEN)
+
                 # Verify the code
                 if not user.verification_code or user.verification_code != verification_code:
                     logger.warning(f"Invalid verification code used for password reset: {email}")
@@ -469,6 +491,13 @@ class CurrentUserView(APIView):
         try:
             logger.debug(f"Current user info request for: {request.user.email}")
             user = request.user
+            
+            if user.is_deleted:
+                logger.warning(f"Deleted user attempted to access profile: {user.email}")
+                return Response({
+                    "error": "This account has been deleted."
+                }, status=status.HTTP_403_FORBIDDEN)
+            
             return Response({
                 'id': user.id,
                 'email': user.email,
@@ -516,9 +545,25 @@ class CustomTokenRefreshView(APIView):
                     "error": "Refresh token is required"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            new_tokens = JWTService.refresh_token(refresh_token)
-            logger.info("Successfully refreshed token")
-            return Response(new_tokens, status=status.HTTP_200_OK)
+            # Get user from token
+            try:
+                token = AccessToken(refresh_token)
+                user = User.objects.get(id=token['user_id'])
+                
+                if user.is_deleted:
+                    logger.warning(f"Token refresh attempted for deleted account: {user.email}")
+                    return Response({
+                        "error": "This account has been deleted."
+                    }, status.HTTP_403_FORBIDDEN)
+                
+                new_tokens = JWTService.refresh_token(refresh_token)
+                logger.info("Successfully refreshed token")
+                return Response(new_tokens, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                logger.error("Token refresh attempted with invalid user ID")
+                return Response({
+                    "error": "Invalid token"
+                }, status.HTTP_401_UNAUTHORIZED)
 
         except TokenError as e:
             logger.warning(f"Invalid token refresh attempt: {str(e)}")
