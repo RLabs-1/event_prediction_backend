@@ -8,6 +8,7 @@ from user_management.exceptions.custom_exceptions import (
     UserStateError,
     UserNotVerifiedError
 )
+from core.model.credentials_model import Credentials
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
@@ -30,8 +31,7 @@ class UserManager(BaseUserManager):
         """Creates a superuser"""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', False)
-        
+
         if not name:
             name = email  # Default name to email if not provided
 
@@ -55,7 +55,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=False)  # For login/logout status
     valid_account = models.BooleanField(default=True)  # For account activation status
     is_staff = models.BooleanField(default=False)
     rating = models.FloatField(default=0.0)
@@ -66,19 +65,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         related_name='associated_users'
     )
     is_deleted = models.BooleanField(default=False)
-    #A DateTime field to store the time when the verification code was generated.
-    token_time_to_live = models.DateTimeField(null=True, blank=True)
-    #A field to store the generated verification code.
-    verification_code = models.CharField(max_length=6, null=True, blank=True)  # Assuming it's a 6-digit code
+   
     #A Boolean field to track whether a password reset is pending.
     is_password_reset_pending = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
-    def is_token_expired(self):
-        """Check if the verification code has expired"""
-        if not self.token_time_to_live:
-            return True
-        return timezone.now() > self.token_time_to_live + timedelta(hours=1)
+    
 
     """User name should be the email"""
     USERNAME_FIELD = 'email'
@@ -263,3 +255,88 @@ class UserToken(models.Model):
 
     def __str__(self):
         return f"Token for {self.user.email}"
+
+    
+
+
+class EmailVerification(models.Model):
+    """
+    Model to handle the email verification process for users.
+    """
+    email = models.EmailField(primary_key=True, max_length=255, default="default@example.com") # Lookup the table using email instead of user_id
+    verification_code = models.CharField(max_length=6, null=True)  # Store the verification code 
+    token_time_to_live = models.DateTimeField(null=True)  # The time when the code will expire
+    tries_left = models.IntegerField(default=3)  # Number of verification attempts left (3 tries per code by default)
+    
+    def is_token_expired(self):
+        """Check if the verification code has expired"""
+        if not self.token_time_to_live:
+            return True
+        return timezone.now() > self.token_time_to_live + timedelta(hours=1)
+    
+    def decrement_tries(self):
+        """Decrement the number of tries left."""
+        if self.tries_left > 0:
+            self.tries_left -= 1
+            self.save()
+    
+    def delete_oldcode(self):
+        """Delete the old verification code."""
+        if(self.tries_left<=0):
+            self.verification_code=None
+            self.token_time_to_live=None
+            self.tries_left=0
+            self.save()
+
+
+    
+    def reset_code(self, new_code, ttl):
+        """Reset the verification code and ttl."""
+        self.verification_code = new_code
+        self.token_time_to_live = ttl
+        self.tries_left = 3  # Reset tries to 3
+        self.save()
+
+    def __str__(self):
+        return f"Verification for {self.user.email}"
+
+    class Meta:
+        verbose_name = 'Email Verification'
+        verbose_name_plural = 'Email Verifications'
+
+
+
+class UserSystemPermissions(models.Model):
+    """
+    Model to manage user permissions for event systems
+    """
+
+    class PermissionLevel(models.IntegerChoices):
+        VIEWER = 1, 'Viewer'
+        EDITOR = 2, 'Editor'
+        ADMIN = 3, 'Admin'
+        OWNER = 4, 'Owner'
+
+    # Remove primary_key=True from both fields
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+    )
+
+    event_system = models.ForeignKey(
+        EventSystem,
+        on_delete=models.CASCADE,
+    )
+
+    permission_level = models.IntegerField(
+        choices=PermissionLevel.choices,
+        default=PermissionLevel.VIEWER
+    )
+
+    class Meta:
+        # This will effectively make the combination a composite primary key
+        unique_together = ('user', 'event_system')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.event_system.name} - {self.get_permission_level_display()}"
+

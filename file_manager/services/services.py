@@ -1,4 +1,4 @@
-from core.models import EventSystem, FileReference
+from core.models import EventSystem, FileReference, UserSystemPermissions
 import os
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -11,8 +11,19 @@ class EventSystemFileService:
 
         event_system = EventSystem.objects.get(id=event_system_id)
 
-        # Check if the authenticated user is part of the event system
-        if user not in event_system.users.all():
+        try:
+            user_permission = UserSystemPermissions.objects.get(user=user, event_system=event_system)
+        except UserSystemPermissions.DoesNotExist:
+            raise PermissionError("You do not have permission to upload files to this EventSystem.")
+
+        # Only allow users with 'Editor', 'Admin', or 'Owner' permissions to upload files
+        allowed_roles = {
+            UserSystemPermissions.PermissionLevel.EDITOR,
+            UserSystemPermissions.PermissionLevel.ADMIN,
+            UserSystemPermissions.PermissionLevel.OWNER
+        }
+
+        if user_permission.permission_level not in allowed_roles:
             raise PermissionError("You do not have permission to upload files to this EventSystem.")
 
         # Check if a file with the same name already exists in this event system
@@ -48,8 +59,18 @@ class EventSystemFileService:
         event_system = EventSystem.objects.get(id=event_system_id)
         file_reference = FileReference.objects.get(id=file_id)
 
-        # Check if the authenticated user is part of the event system
-        if user not in event_system.users.all():
+        try:
+            user_permission = UserSystemPermissions.objects.get(user=user, event_system=event_system)
+        except UserSystemPermissions.DoesNotExist:
+            raise PermissionError("You do not have permission to delete files from this EventSystem.")
+
+        # Only allow users with 'Admin', or 'Owner' permissions to delete files
+        allowed_roles = {
+            UserSystemPermissions.PermissionLevel.ADMIN,
+            UserSystemPermissions.PermissionLevel.OWNER
+        }
+
+        if user_permission.permission_level not in allowed_roles:
             raise PermissionError("You do not have permission to delete this file.")
 
         # Ensure file belongs to the event system
@@ -77,8 +98,19 @@ class EventSystemFileService:
         event_system = EventSystem.objects.get(id=event_system_id)
         file_reference = FileReference.objects.get(id=file_id)
 
-        # Check if the authenticated user is part of the event system
-        if user not in event_system.users.all():
+        try:
+            user_permission = UserSystemPermissions.objects.get(user=user, event_system=event_system)
+        except UserSystemPermissions.DoesNotExist:
+            raise PermissionError("You do not have permission to update this file name.")
+
+        # Only allow users with 'Editor', 'Admin', or 'Owner' permissions to update file name
+        allowed_roles = {
+            UserSystemPermissions.PermissionLevel.EDITOR,
+            UserSystemPermissions.PermissionLevel.ADMIN,
+            UserSystemPermissions.PermissionLevel.OWNER
+        }
+
+        if user_permission.permission_level not in allowed_roles:
             raise PermissionError("You do not have permission to update this file name.")
 
         # Ensure the file belongs to the event system
@@ -124,9 +156,19 @@ class EventSystemFileService:
         event_system = EventSystem.objects.get(id=event_system_id)
         file_reference = FileReference.objects.get(id=file_id)
 
-        # Check if the authenticated user is part of the event system
-        if user not in event_system.users.all():
-            raise PermissionError("You do not have permission to 'select' or 'deselect' this file.")
+        try:
+            user_permission = UserSystemPermissions.objects.get(user=user, event_system=event_system)
+        except UserSystemPermissions.DoesNotExist:
+            raise PermissionError("You do not have permission to modify file selection.")
+
+        # Only Admins and Owners are allowed to select/deselect files
+        allowed_roles = {
+            UserSystemPermissions.PermissionLevel.ADMIN,
+            UserSystemPermissions.PermissionLevel.OWNER
+        }
+
+        if user_permission.permission_level not in allowed_roles:
+            raise PermissionError("Only Admins and Owners can select or deselect files.")
 
         # Ensure the file belongs to the event system
         if not event_system.file_objects.filter(id=file_id).exists():
@@ -151,6 +193,14 @@ class EventSystemService:
     def create_event_system(name, user):
         """Create a new event system and associate it with the user."""
         event_system = EventSystem.objects.create(name=name)
+
+        # Associate the authenticated user as the OWNER of the event system
+        UserSystemPermissions.objects.create(
+            user=user,
+            event_system=event_system,
+            permission_level=UserSystemPermissions.PermissionLevel.OWNER
+        )
+
         event_system.users.add(user)
         return event_system
 
