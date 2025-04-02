@@ -70,7 +70,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_password_reset_pending = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
-
     credentials = models.ManyToManyField(
         Credentials,
         related_name="users",
