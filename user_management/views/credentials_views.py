@@ -14,7 +14,6 @@ class AddCredentialsView(APIView):
     )
 
     def post(self, request):
-
         # Get the currently logged-in user
         user = request.user
 
@@ -28,7 +27,6 @@ class AddCredentialsView(APIView):
                 serializer.validated_data['access_key'],
                 serializer.validated_data['secret_key'],
                 serializer.validated_data['storage'],
-                user
             )
             return Response(
                 {"message": "Credentials added successfully", "id": credentials.id},

@@ -42,7 +42,6 @@ class UserManager(BaseUserManager):
             **extra_fields
         )
 
-
 class User(AbstractBaseUser, PermissionsMixin):
     """
     Base User Model
@@ -171,20 +170,15 @@ class FileReference(models.Model):
     url = models.URLField(max_length=500)
 
     #Storage Provider (ENUM)
-    class StorageProvider(models.TextChoices):
-        """
-        Enum class representing different storage providers.
-        Options include AWS, S3, GoogleDrive, LocalStorage, etc.
-        """
-        AWS = 'AWS'
-        S3 = 'S3'
-        GOOGLE_DRIVE = 'GoogleDrive'
-        LOCAL = 'LocalStorage'
+    class StorageProvider(models.IntegerChoices):
+        AWS = 1, 'AWS'
+        S3 = 2, 'S3'
+        GOOGLE_DRIVE = 3, 'Google Drive'
+        LOCAL = 4, 'Local Storage'
 
-    storage_provider = models.CharField(
-        max_length=20,
+    storage_provider = models.IntegerField(
         choices=StorageProvider.choices,
-        default=StorageProvider.LOCAL,
+        default=StorageProvider.LOCAL
     )
 
     #Size (in bytes)
@@ -193,36 +187,25 @@ class FileReference(models.Model):
     upload_date = models.DateTimeField(auto_now_add=True)
 
     #Upload Status (ENUM)
-    class UploadStatus(models.TextChoices):
-        """
-        Enum class representing the current status of the file upload.
-        Possible values include 'Complete', 'Pending', 'Failed', and 'Processing'.
-        """
+    class UploadStatus(models.IntegerChoices):
+        COMPLETE = 1, 'Complete'
+        PENDING = 2, 'Pending'
+        FAILED = 3, 'Failed'
+        PROCESSING = 4, 'Processing'
 
-        COMPLETE = 'Complete'
-        PENDING = 'Pending'
-        FAILED = 'Failed'
-        PROCESSING = 'Processing'
-
-    upload_status = models.CharField(
-        max_length=20,
+    upload_status = models.IntegerField(
         choices=UploadStatus.choices,
-        default=UploadStatus.PENDING,
+        default=UploadStatus.PENDING
     )
 
     #File Type (ENUM)
-    class FileType(models.TextChoices):
-        """
-        Enum class representing the type of the file.
-        Common types include 'EventFile' and 'PredictionFile'.
-        """
-        EVENT_FILE = 'EventFile'
-        PREDICTION_FILE = 'PredictionFile'
+    class FileType(models.IntegerChoices):
+        EVENT_FILE = 1, 'Event File'
+        PREDICTION_FILE = 2, 'Prediction File'
 
-    file_type = models.CharField(
-        max_length=20,
+    file_type = models.IntegerField(
         choices=FileType.choices,
-        default=FileType.EVENT_FILE,
+        default=FileType.EVENT_FILE
     )
 
     is_selected = models.BooleanField(default=False)
@@ -232,11 +215,6 @@ class FileReference(models.Model):
         String representation of the FileReference model, displaying the file name and type.
          """
         return f"{self.file_name} ({self.get_file_type_display()})"
-
-
-class EventStatus(models.TextChoices):
-    ACTIVE = 'Active', 'Active'
-    INACTIVE = 'Inactive', 'Inactive'
 
 class EventSystem(models.Model):
     #A CharField for the name of the EventSystem.
@@ -248,9 +226,12 @@ class EventSystem(models.Model):
     #A many-to-many relationship with the FileReference model to allow multiple file associations.
     file_objects = models.ManyToManyField(FileReference, related_name='event_systems')
 
-    #An Enum field with choices of Active or Inactive, using Django's TextChoices.
-    status = models.CharField(
-        max_length=8,
+    class EventStatus(models.IntegerChoices):
+        ACTIVE = 1, 'Active'
+        INACTIVE = 2, 'Inactive'
+
+    #An Enum field with choices of Active or Inactive.
+    status = models.IntegerField(
         choices=EventStatus.choices,
         default=EventStatus.ACTIVE
     )
