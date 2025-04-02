@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from core.model.credentials_model import Credentials
 
+
 class AddCredentialsView(APIView):
     """API View for adding user credentials"""
 
@@ -18,7 +19,6 @@ class AddCredentialsView(APIView):
     )
 
     def post(self, request):
-
         # Get the currently logged-in user
         user = request.user
 
@@ -57,3 +57,4 @@ class GetCredentialsView(APIView):
         except Credentials.DoesNotExist:
             return Response({"detail": "Credentials not found"}, status=status.HTTP_404_NOT_FOUND)
             sponse({"detail": "Credentials not found"}, status=status.HTTP_404_NOT_FOUND)
+
