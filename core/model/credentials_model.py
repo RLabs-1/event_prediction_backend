@@ -17,8 +17,6 @@ class Credentials(models.Model):
 
     def set_secret_key(self, raw_secret_key):
         """Hash and store the secret key"""
-
-
         self.secret_key = make_password(raw_secret_key)  # Hashing secret key
 
 

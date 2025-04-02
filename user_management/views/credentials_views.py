@@ -9,17 +9,24 @@ class AddCredentialsView(APIView):
     """API View for adding user credentials"""
 
     @extend_schema(
-        request=CredentialsSerializer,  # 🟢 This ensures Swagger knows the fields
+        request=CredentialsSerializer,  # This ensures Swagger knows the fields
         responses={201: CredentialsSerializer, 400: "Bad Request"},
     )
 
     def post(self, request):
+        # Get the currently logged-in user
+        user = request.user
+
+        # Check if the user is authenticated
+        if not user.is_authenticated:
+            return Response({"error": "User is not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+
         serializer = CredentialsSerializer(data=request.data)
         if serializer.is_valid():
             credentials = create_credentials(
                 serializer.validated_data['access_key'],
                 serializer.validated_data['secret_key'],
-                serializer.validated_data['storage']
+                serializer.validated_data['storage'],
             )
             return Response(
                 {"message": "Credentials added successfully", "id": credentials.id},
