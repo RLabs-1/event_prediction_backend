@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'core',
     'corsheaders',
     'django_celery_beat',
+    'storages',
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -119,8 +120,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # # S3 Storage settings
-# INSTALLED_APPS += ['storages']
-#
 # AWS_ACCESS_KEY_ID = "your-access-key"  # Replace with the actual key
 # AWS_SECRET_ACCESS_KEY = "your-secret-key"  # Replace with the actual secret
 # AWS_STORAGE_BUCKET_NAME = "your-bucket-name"  # Replace with the bucket name

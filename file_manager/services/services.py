@@ -8,8 +8,8 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 class EventSystemFileService:
     @staticmethod
-    def upload_file(file, event_system_id, user):
-        """Save file to local storage and create a FileReference entry."""
+    def upload_file(file, event_system_id, user, storage_provider):
+        """Save file to local storage or s3 and create a FileReference entry."""
 
         event_system = EventSystem.objects.get(id=event_system_id)
 
@@ -33,16 +33,15 @@ class EventSystemFileService:
         if existing_file:
             raise FileExistsError("A file with the same name already exists.")
 
-        if event_system.storage_provider == FileReference.StorageProvider.S3:
+        if storage_provider == FileReference.StorageProvider.S3:
             # Upload to S3
             file_url = EventSystemFileService.upload_to_s3(file, file.name)
-            storage_provider = FileReference.StorageProvider.S3
+
         else:
             # Upload to local storage
             file_path = os.path.join('event_system', str(event_system_id), file.name)
             saved_path = default_storage.save(file_path, ContentFile(file.read()))
             file_url = settings.MEDIA_URL + saved_path
-            storage_provider = FileReference.StorageProvider.LOCAL
 
         # Create FileReference entry
         file_reference = FileReference.objects.create(

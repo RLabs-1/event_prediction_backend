@@ -275,12 +275,13 @@ class FileUploadView(APIView):
     def post(self, request, eventSystemId):
         """Upload file to event system"""
         file = request.FILES.get('file')
+        storage_provider = request.data.get('storage_provider', FileReference.StorageProvider.LOCAL)  # Default to LOCAL
 
         if not file:
             return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            file_reference = EventSystemFileService.upload_file(file, eventSystemId, request.user)
+            file_reference = EventSystemFileService.upload_file(file, eventSystemId, request.user, storage_provider)
 
             return Response({
                 "message": "File uploaded successfully",
