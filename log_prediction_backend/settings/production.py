@@ -1,5 +1,8 @@
 from .base import *
 import dj_database_url
+from loguru import logger
+import sys
+
 
 DEBUG = False
 ALLOWED_HOSTS = ['temp-event-analyzer-fe6caee7f8ac.herokuapp.com']
@@ -82,25 +85,80 @@ SIMPLE_JWT = {
 }
 
 # Production Logging - More strict, but with console only for Heroku
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'ERROR',
-            'class': 'logging.StreamHandler',
+#Logging configuration
+
+# Logging configuration
+LOG_DIR = os.path.join(BASE_DIR, 'logs') 
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Remove default log handlers to avoid duplicates
+logger.remove()
+
+# Log format with more context
+LOG_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}"
+
+# Configure Loguru Handlers
+logger.configure(
+    handlers=[
+        # Debug Log (Logs all messages)
+        {
+            "sink": os.path.join(LOG_DIR, "debug.log"),
+            "level": "DEBUG",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
+            "diagnose": True,
         },
-    },
-    'loggers': {
-        'user_management': {
-            'handlers': ['console'],
-            'level': 'ERROR',
-            'propagate': True,
+        # Info Log
+        {
+            "sink": os.path.join(LOG_DIR, "info.log"),
+            "level": "INFO",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
         },
-        'django': {
-            'handlers': ['console'],
-            'level': 'ERROR',
-            'propagate': True,
+        # Warning Log
+        {
+            "sink": os.path.join(LOG_DIR, "warning.log"),
+            "level": "WARNING",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
         },
-    },
-}
+        # Error Log
+        {
+            "sink": os.path.join(LOG_DIR, "error.log"),
+            "level": "ERROR",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
+            "diagnose": True,
+        },
+        # Critical Log
+        {
+            "sink": os.path.join(LOG_DIR, "critical.log"),
+            "level": "CRITICAL",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
+            "diagnose": True,
+        },
+        # Console Output (for development)
+        {
+            "sink": sys.stderr,
+            "level": "DEBUG" if DEBUG else "INFO",
+            "format": "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>",
+            "colorize": True,
+            "enqueue": True,
+        },
+    ]
+)

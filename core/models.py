@@ -19,6 +19,9 @@ class UserManager(BaseUserManager):
             raise ValueError("Must provide an email")
         email = self.normalize_email(email)
 
+        # Set default values for is_active
+        extra_fields.setdefault('is_active', True)  # Users start as active by default
+        
         user = self.model(
             email=email,
             **extra_fields
@@ -31,9 +34,10 @@ class UserManager(BaseUserManager):
         """Creates a superuser"""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)  # Superusers are always active
 
         if not name:
-            name = email  # Default name to email if not provided
+            name = email
 
         return self.create_user(
             email=email,
@@ -55,8 +59,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True, max_length=255)
     name = models.CharField(max_length=255)
-    valid_account = models.BooleanField(default=True)  # For account activation status
     is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(
+        default=False,
+        help_text='Designates whether this user is logged in. Set False when user logs out.'
+    )
     rating = models.FloatField(default=0.0)
     num_of_usages = models.IntegerField(default=0)
     is_verified = models.BooleanField(default=False)
@@ -65,10 +72,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         related_name='associated_users'
     )
     is_deleted = models.BooleanField(default=False)
-   
-    #A Boolean field to track whether a password reset is pending.
     is_password_reset_pending = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+
 
     credentials = models.ManyToManyField(
         Credentials,
@@ -84,6 +90,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return timezone.now() > self.token_time_to_live + timedelta(hours=1)
 
       
+
     """User name should be the email"""
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
@@ -139,22 +146,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             super().save(*args, **kwargs)
         except Exception as e:
             raise UserStateError(f"Error saving user: {str(e)}")
-
-    def activate_account(self):
-        """Activate user account"""
-        if not self.is_verified:
-            raise UserNotVerifiedError("Cannot activate unverified account")
-        if self.valid_account:
-            raise UserStateError("Account is already active")
-        self.valid_account = True
-        self.save()
-
-    def deactivate_account(self):
-        """Deactivate user account"""
-        if not self.valid_account:
-            raise UserStateError("Account is already inactive")
-        self.valid_account = False
-        self.save()
 
 class FileReference(models.Model):
     """
