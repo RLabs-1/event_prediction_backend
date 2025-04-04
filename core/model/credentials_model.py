@@ -19,6 +19,7 @@ class Credentials(models.Model):
         """Hash and store the secret key"""
         self.secret_key = make_password(raw_secret_key)  # Hashing secret key
 
+
     def check_secret_key(self, raw_secret_key):
         """Verify if the given secret key matches the stored hash"""
         return check_password(raw_secret_key, self.secret_key)
@@ -26,7 +27,7 @@ class Credentials(models.Model):
     def save(self, *args, **kwargs):
         """Ensure the secret_key is always hashed before saving"""
         if not self.secret_key.startswith('pbkdf2_sha256$'):
-            self.secret_key = make_password(self.secret_key)
+            self.set_secret_key(self.secret_key)
         super().save(*args, **kwargs)
 
 
