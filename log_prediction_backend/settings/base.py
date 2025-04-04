@@ -117,3 +117,14 @@ AUTHENTICATION_BACKENDS = [
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# # S3 Storage settings
+# INSTALLED_APPS += ['storages']
+#
+# AWS_ACCESS_KEY_ID = "your-access-key"  # Replace with the actual key
+# AWS_SECRET_ACCESS_KEY = "your-secret-key"  # Replace with the actual secret
+# AWS_STORAGE_BUCKET_NAME = "your-bucket-name"  # Replace with the bucket name
+# AWS_S3_REGION_NAME = "your-region"  # Replace with the AWS region (e.g., 'us-west-2')
+# AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+#
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
