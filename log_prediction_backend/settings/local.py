@@ -3,12 +3,14 @@ from .base import *
 
 DATABASES = {
     'default': {
+
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'event_prediction_db3',
         'USER': 'postgres',
         'PASSWORD': 'adankh313',
         'HOST': 'localhost',
         'PORT': '5432',
+
     }
 }
 
