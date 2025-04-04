@@ -334,6 +334,7 @@ class FileUploadView(APIView):
     def post(self, request, eventSystemId):
         """Upload file to event system"""
         file = request.FILES.get('file')
+        storage_provider = request.data.get('storage_provider', FileReference.StorageProvider.LOCAL)  # Default to LOCAL
 
         if not file:
             logger.warning(f"File upload attempted without file. User: {request.user.email}")
@@ -341,7 +342,8 @@ class FileUploadView(APIView):
 
         try:
             logger.debug(f"Attempting to upload file. Name: {file.name}, Size: {file.size}, User: {request.user.email}")
-            file_reference = EventSystemFileService.upload_file(file, eventSystemId, request.user)
+            file_reference = EventSystemFileService.upload_file(file, eventSystemId, request.user, storage_provider)
+
 
             logger.info(f"Successfully uploaded file. ID: {file_reference.id}, Name: {file.name}")
             return Response({
