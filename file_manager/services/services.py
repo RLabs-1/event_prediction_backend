@@ -299,7 +299,7 @@ class EventSystemService:
             raise PermissionError("You do not have permission to deactivate this EventSystem.")
 
         if event_system.status == status:
-            raise ValueError(f"EventSystem is already {status.lower()}.")
+            raise ValueError(f"EventSystem is already {EventSystem.EventStatus(status).label}.")
 
         # Update the status and save
         event_system.status = status

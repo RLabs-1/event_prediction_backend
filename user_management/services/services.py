@@ -53,9 +53,9 @@ class UserService:
         """Deactivate a user account"""
         try:
             user = User.objects.get(id=user_id)
-            if not user.valid_account:
+            if user.is_deleted:
                 raise UserInactiveException("User is already inactive")
-            user.valid_account = False
+            user.is_deleted = True
             user.save()
             return user
         except User.DoesNotExist:
@@ -75,12 +75,12 @@ class UserService:
         """Activate a user account"""
         try:
             user = User.objects.get(id=user_id)
-            if user.valid_account:
+            if not user.is_deleted:
                 return {
                     "message": "User is already active",
                     "success": False
                 }
-            user.valid_account = True
+            user.is_deleted = False
             user.save()
             return {
                 "success": True
