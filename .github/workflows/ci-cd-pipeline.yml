@@ -1,0 +1,39 @@
+# .github/workflows/ci-cd-pipeline.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'  # Adjust to your version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Adjust if you have a different requirements file
+
+      - name: Run tests
+        run: |
+          pytest core/test.py user_management/tests  # Run tests from both locations
+
+      - name: Build application
+        run: |
+          python manage.py makemigrations  # Create new migrations
+          python manage.py migrate  # Apply migrations
+
+      - name: Deploy
+        run: |
+          # Add your deployment commands here
+          echo "Deploying the application..."
