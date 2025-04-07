@@ -3,6 +3,83 @@ import os
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
+
+
+class JWTService:
+    @staticmethod
+    def create_token(user):
+        """Create and store JWT token for the user"""
+        try:
+            refresh = RefreshToken.for_user(user)
+            # Add custom claims to the token
+            refresh['email'] = user.email
+            refresh['uuid'] = str(user.id)  # Use user.id (UUID) as the UUID
+            refresh['name'] = user.name
+            refresh['is_verified'] = user.is_verified
+
+            # Create token pair
+            tokens = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+
+            # Store or update tokens in database (if needed)
+            try:
+                UserToken.objects.update_or_create(
+                    user=user,
+                    defaults={
+                        'access_token': tokens['access'],
+                        'refresh_token': tokens['refresh']
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Error storing tokens in database: {str(e)}")
+                # Continue even if database storage fails
+
+            return tokens
+
+        except Exception as e:
+            logger.error(f"Error creating tokens: {str(e)}")
+            raise InvalidUserOperationException("Error creating authentication tokens")
+
+    @staticmethod
+    def refresh_token(refresh_token_str):
+        """Refresh access token and update in database"""
+        try:
+            refresh = RefreshToken(refresh_token_str)
+            user_id = refresh.payload.get('user_id')
+            user = User.objects.get(id=user_id)
+
+            # Include additional user information in the refreshed token
+            refresh['email'] = user.email
+            refresh['uuid'] = str(user.id)  # Use user.id (UUID) as the UUID
+            refresh['name'] = user.name
+            refresh['is_verified'] = user.is_verified
+
+            # Generate new access token
+            new_access_token = str(refresh.access_token)
+
+            # Update in database (if needed)
+            try:
+                user_token = UserToken.objects.get(user=user)
+                user_token.access_token = new_access_token
+                user_token.save()
+            except UserToken.DoesNotExist:
+                # Create new token record if it doesn't exist
+                UserToken.objects.create(
+                    user=user,
+                    access_token=new_access_token,
+                    refresh_token=refresh_token_str
+                )
+
+            return {
+                'access': new_access_token
+            }
+        except Exception as e:
+            logger.error(f"Error refreshing token: {str(e)}")
+            raise InvalidToken(f"Invalid refresh token")
 
 class EventSystemFileService:
     @staticmethod
