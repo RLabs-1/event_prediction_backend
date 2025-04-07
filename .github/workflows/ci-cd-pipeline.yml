@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -30,8 +30,8 @@ jobs:
 
       - name: Build application
         run: |
-          # Add your build commands here, if applicable
-          echo "Building the application..."
+          python manage.py makemigrations  # Create new migrations
+          python manage.py migrate  # Apply migrations
 
       - name: Deploy
         run: |
