@@ -1,0 +1,39 @@
+# .github/workflows/ci-cd-pipeline.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'  # Specify your Python version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Adjust if you have a different requirements file
+
+      - name: Run tests
+        run: |
+          pytest  # Adjust this command based on your testing framework
+
+      - name: Build application
+        run: |
+          # Add your build commands here, if applicable
+          echo "Building the application..."
+
+      - name: Deploy
+        run: |
+          # Add your deployment commands here
+          echo "Deploying the application..."
