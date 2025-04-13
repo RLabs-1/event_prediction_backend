@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from datetime import timedelta
@@ -9,6 +10,129 @@ from user_management.exceptions.custom_exceptions import (
     UserNotVerifiedError
 )
 from core.model.credentials_model import Credentials
+from loguru import logger
+
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+
+class FileReference(models.Model):
+    """
+    Enhanced FileReference model with comprehensive logging
+    """
+
+    class StorageProvider(models.IntegerChoices):
+        AWS = 1, 'AWS'
+        S3 = 2, 'S3'
+        GOOGLE_DRIVE = 3, 'Google Drive'
+        LOCAL = 4, 'Local Storage'
+
+    class UploadStatus(models.IntegerChoices):
+        COMPLETE = 1, 'Complete'
+        PENDING = 2, 'Pending'
+        FAILED = 3, 'Failed'
+        PROCESSING = 4, 'Processing'
+
+    class FileType(models.IntegerChoices):
+        EVENT_FILE = 1, 'Event File'
+        PREDICTION_FILE = 2, 'Prediction File'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    file_name = models.CharField(max_length=255)
+    url = models.URLField(max_length=500)
+    storage_provider = models.IntegerField(
+        choices=StorageProvider.choices,
+        default=StorageProvider.LOCAL
+    )
+    size = models.PositiveBigIntegerField()
+    upload_date = models.DateTimeField(auto_now_add=True)
+    upload_status = models.IntegerField(
+        choices=UploadStatus.choices,
+        default=UploadStatus.PENDING
+    )
+    file_type = models.IntegerField(
+        choices=FileType.choices,
+        default=FileType.EVENT_FILE
+    )
+    is_selected = models.BooleanField(default=False)
+
+    def __str__(self):
+        logger.debug(f"Generating string representation for FileReference {self.id}")
+        return f"{self.file_name} ({self.get_file_type_display()})"
+
+    def save(self, *args, **kwargs):
+        try:
+            action = "Creating" if self._state.adding else "Updating"
+            logger.info(
+                f"{action} FileReference | ID: {self.id if self.id else 'NEW'} | "
+                f"Name: {self.file_name} | Type: {self.get_file_type_display()}"
+            )
+            super().save(*args, **kwargs)
+            logger.success(f"Saved FileReference {self.id}")
+        except Exception as e:
+            logger.error(f"Failed to save FileReference: {str(e)}", exc_info=True)
+            raise
+
+    def delete(self, *args, **kwargs):
+        try:
+            logger.warning(f"Deleting FileReference {self.id}")
+            super().delete(*args, **kwargs)
+            logger.info(f"Deleted FileReference {self.id}")
+        except Exception as e:
+            logger.error(f"Failed to delete FileReference: {str(e)}", exc_info=True)
+            raise
+
+    def change_status(self, new_status):
+        """
+        Helper method to safely change upload status with validation
+        """
+        try:
+            if self.upload_status == new_status:
+                logger.debug(f"Status unchanged for FileReference {self.id}")
+                return False
+
+            old_status = self.get_upload_status_display()
+            self.upload_status = new_status
+            self.save(update_fields=['upload_status'])
+
+            logger.info(
+                f"Changed status for FileReference {self.id} | "
+                f"From: {old_status} → To: {self.get_upload_status_display()}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Status change failed for FileReference {self.id} | "
+                f"Error: {str(e)}",
+                exc_info=True
+            )
+            raise
+
+    def toggle_selection(self):
+        """
+        Toggle file selection state with logging
+        """
+        try:
+            self.is_selected = not self.is_selected
+            self.save(update_fields=['is_selected'])
+
+            action = "Selected" if self.is_selected else "Deselected"
+            logger.info(
+                f"{action} FileReference {self.id} | "
+                f"Name: {self.file_name}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Selection toggle failed for FileReference {self.id} | "
+                f"Error: {str(e)}",
+                exc_info=True
+            )
+            raise
+
 
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
