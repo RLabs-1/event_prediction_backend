@@ -5,6 +5,8 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+import boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 
 class JWTService:
@@ -83,8 +85,8 @@ class JWTService:
 
 class EventSystemFileService:
     @staticmethod
-    def upload_file(file, event_system_id, user):
-        """Save file to local storage and create a FileReference entry."""
+    def upload_file(file, event_system_id, user, storage_provider):
+        """Save file to local storage or s3 and create a FileReference entry."""
 
         event_system = EventSystem.objects.get(id=event_system_id)
 
@@ -108,17 +110,21 @@ class EventSystemFileService:
         if existing_file:
             raise FileExistsError("A file with the same name already exists.")
 
-        file_path = os.path.join('event_system', str(event_system_id), file.name)
+        if storage_provider == FileReference.StorageProvider.S3:
+            # Upload to S3
+            file_url = EventSystemFileService.upload_to_s3(file, file.name)
 
-        # Save file
-        saved_path = default_storage.save(file_path, ContentFile(file.read()))
-        file_url = settings.MEDIA_URL + saved_path  # Generate the file URL
+        else:
+            # Upload to local storage
+            file_path = os.path.join('event_system', str(event_system_id), file.name)
+            saved_path = default_storage.save(file_path, ContentFile(file.read()))
+            file_url = settings.MEDIA_URL + saved_path
 
         # Create FileReference entry
         file_reference = FileReference.objects.create(
             file_name=file.name,
             url=file_url,
-            storage_provider=FileReference.StorageProvider.LOCAL,
+            storage_provider=storage_provider,
             size=file.size,
             upload_status=FileReference.UploadStatus.COMPLETE,  # Mark as complete
             file_type=FileReference.FileType.EVENT_FILE
@@ -128,6 +134,27 @@ class EventSystemFileService:
         event_system.file_objects.add(file_reference)
 
         return file_reference
+
+    @staticmethod
+    def upload_to_s3(file, file_name):
+        """Upload file to AWS S3 and return the file URL."""
+        try:
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            )
+            s3_client.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, file_name)
+
+            file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{file_name}"
+            return file_url
+
+        except NoCredentialsError:
+            raise ValueError("AWS credentials not found.")
+        except PartialCredentialsError:
+            raise ValueError("AWS credentials are incomplete.")
+        except Exception as e:
+            raise ValueError(f"Error uploading file to S3: {str(e)}")
 
     @staticmethod
     def delete_file(event_system_id, file_id, user):

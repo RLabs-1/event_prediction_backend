@@ -57,7 +57,7 @@ class EventSystemCreateView(APIView):
         logger.debug(f"Received POST request to create event system from user: {request.user.email}")
 
         serializer = EventSystemCreateSerializer(data=request.data)
-
+        
         if serializer.is_valid():
             try:
                 logger.debug(f"Serializer validated data: {serializer.validated_data}")
@@ -110,14 +110,25 @@ class EventSystemNameUpdateView(APIView):
         }
     )
     def patch(self, request, eventSystemId):
+
         try:
             logger.debug(f"Attempting to update event system name. ID: {eventSystemId}, User: {request.user.email}")
             event_system = EventSystem.objects.get(id=eventSystemId)
 
-            # Check if the user is authorized
-            if request.user not in event_system.users.all():
-                logger.warning(f"Permission denied - User {request.user.email} attempted to update event system {eventSystemId}")
-                raise PermissionError("Permission denied – You do not have permission to update this EventSystem.")
+        
+            user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            allowed_roles = {
+                 UserSystemPermissions.PermissionLevel.ADMIN,
+                 UserSystemPermissions.PermissionLevel.OWNER,
+                 UserSystemPermissions.PermissionLevel.EDITOR
+             }
+        
+            if user_permission.permission_level not in allowed_roles:
+                 logger.warning(f"Permission denied - User {request.user.email} attempted to update event system {eventSystemId}")
+                 raise PermissionError("You do not have permission to do this action.")
+              
+          
+
 
             serializer = EventSystemNameUpdateSerializer(event_system, data=request.data, partial=True)
 
@@ -136,6 +147,10 @@ class EventSystemNameUpdateView(APIView):
             logger.info(f"Successfully updated event system name. ID: {eventSystemId}, New name: {serializer.validated_data['name']}")
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+        except UserSystemPermissions.DoesNotExist:
+            return Response({"error": "User permissions not found"}, status=status.HTTP_403_FORBIDDEN)
+        
         except EventSystem.DoesNotExist:
             logger.error(f"Event system not found. ID: {eventSystemId}")
             return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -148,6 +163,8 @@ class EventSystemNameUpdateView(APIView):
         except Exception as e:
             logger.exception("Unexpected error while updating event system name")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
 
 class ActivateEventSystemView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -177,10 +194,31 @@ class ActivateEventSystemView(APIView):
     def patch(self, request, eventSystemId):
         """Activate an EventSystem."""
         try:
+
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            allowed_roles = {
+                 UserSystemPermissions.PermissionLevel.ADMIN,
+                 UserSystemPermissions.PermissionLevel.OWNER
+             }
+        
+            if user_permission.permission_level not in allowed_roles:
+                 raise PermissionError("You do not have permission to do this action.")
+              
+              
             logger.debug(f"Attempting to activate event system. ID: {eventSystemId}, User: {request.user.email}")
+            
+            # Attempt to update the status of the EventSystem
             event_system = EventSystemService.update_status(eventSystemId, EventSystem.EventStatus.ACTIVE, request.user)
+            
             logger.info(f"Successfully activated event system. ID: {eventSystemId}")
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response( status=status.HTTP_204_NO_CONTENT)
+            
+        
+        
+        except UserSystemPermissions.DoesNotExist:
+            return Response({"error": "User permissions not found"}, status=status.HTTP_403_FORBIDDEN)
+        
 
         except ValueError as e:
             logger.warning(f"Invalid request for event system activation: {str(e)}")
@@ -223,11 +261,31 @@ class DeactivateEventSystemView(APIView):
     def patch(self, request, eventSystemId):
         """Deactivate an EventSystem."""
         try:
-            logger.debug(f"Attempting to deactivate event system. ID: {eventSystemId}, User: {request.user.email}")
-            event_system = EventSystemService.update_status(eventSystemId, EventSystem.EventStatus.INACTIVE, request.user)
-            logger.info(f"Successfully deactivated event system. ID: {eventSystemId}")
-            return Response(status=status.HTTP_204_NO_CONTENT)
 
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+            allowed_roles = {
+                 UserSystemPermissions.PermissionLevel.ADMIN,
+                 UserSystemPermissions.PermissionLevel.OWNER
+             }
+        
+            if user_permission.permission_level not in allowed_roles:
+                 raise PermissionError("You do not have permission to do this action.")
+            
+            logger.debug(f"Attempting to deactivate event system. ID: {eventSystemId}, User: {request.user.email}")
+            
+            # Attempt to update the status of the EventSystem
+            event_system = EventSystemService.update_status(eventSystemId, EventSystem.EventStatus.INACTIVE, request.user)
+            
+            logger.info(f"Successfully deactivated event system. ID: {eventSystemId}")
+            
+            return Response( status=status.HTTP_204_NO_CONTENT)
+
+
+
+        except UserSystemPermissions.DoesNotExist:
+            return Response({"error": "User permissions not found"}, status=status.HTTP_403_FORBIDDEN)
+        
         except ValueError as e:
             logger.warning(f"Invalid request for event system deactivation: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -276,6 +334,7 @@ class FileUploadView(APIView):
     def post(self, request, eventSystemId):
         """Upload file to event system"""
         file = request.FILES.get('file')
+        storage_provider = request.data.get('storage_provider', FileReference.StorageProvider.LOCAL)  # Default to LOCAL
 
         if not file:
             logger.warning(f"File upload attempted without file. User: {request.user.email}")
@@ -283,7 +342,8 @@ class FileUploadView(APIView):
 
         try:
             logger.debug(f"Attempting to upload file. Name: {file.name}, Size: {file.size}, User: {request.user.email}")
-            file_reference = EventSystemFileService.upload_file(file, eventSystemId, request.user)
+            file_reference = EventSystemFileService.upload_file(file, eventSystemId, request.user, storage_provider)
+
 
             logger.info(f"Successfully uploaded file. ID: {file_reference.id}, Name: {file.name}")
             return Response({
@@ -635,19 +695,21 @@ class EventSystemFileListView(APIView):
 
             try:
                 user_permission = UserSystemPermissions.objects.get(user=request.user, event_system=event_system)
+                
+                allowed_roles = {
+                    UserSystemPermissions.PermissionLevel.ADMIN,
+                    UserSystemPermissions.PermissionLevel.OWNER,
+                    UserSystemPermissions.PermissionLevel.VIEWER
+                }
+
+                if user_permission.permission_level not in allowed_roles:
+                    logger.warning(f"Insufficient permissions for user {request.user.email} to list files")
+                    raise PermissionError("You do not have permission to view files.")
+                    
             except UserSystemPermissions.DoesNotExist:
                 logger.warning(f"Permission denied - User {request.user.email} attempted to list files for event system {eventSystemId}")
                 raise PermissionError("You do not have permission to view files.")
 
-            allowed_roles = {
-                UserSystemPermissions.PermissionLevel.ADMIN,
-                UserSystemPermissions.PermissionLevel.OWNER,
-                UserSystemPermissions.PermissionLevel.VIEWER
-            }
-
-            if user_permission.permission_level not in allowed_roles:
-                logger.warning(f"Insufficient permissions for user {request.user.email} to list files")
-                raise PermissionError("You do not have permission to view files.")
 
             # Retrieve files associated with this event system
             files = event_system.file_objects.all()
@@ -670,9 +732,12 @@ class EventSystemFileListView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+            
+
         except PermissionError as e:
             logger.warning(f"Permission error during file listing: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
 
         except Exception as e:
             logger.exception("Unexpected error during file listing")
@@ -680,4 +745,3 @@ class EventSystemFileListView(APIView):
                 {"error": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
