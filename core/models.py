@@ -65,49 +65,55 @@ class FileReference(models.Model):
         try:
             action = "Creating" if self._state.adding else "Updating"
             logger.info(
-                f"{action} FileReference | ID: {self.id if self.id else 'NEW'} | "
-                f"Name: {self.file_name} | Type: {self.get_file_type_display()}"
+                f"{action} FileReference | ID: {getattr(self, 'id', 'NEW')} | "
+                f"Name: {self.file_name[:50]}... | "
+                f"Type: {self.get_file_type_display()}"
             )
+            
             super().save(*args, **kwargs)
+            
             logger.success(f"Saved FileReference {self.id}")
+            
         except Exception as e:
-            logger.error(f"Failed to save FileReference: {str(e)}", exc_info=True)
+            logger.error(
+                f"Failed to save FileReference | Error: {str(e)} | "
+                f"Data: {self.__dict__}"
+            )
             raise
 
     def delete(self, *args, **kwargs):
-        try:
-            logger.warning(f"Deleting FileReference {self.id}")
+       try:
+            logger.warning(
+                f"Deleting FileReference {self.id} | "
+                f"Used in {self.event_systems.count()} EventSystems"
+            )
             super().delete(*args, **kwargs)
             logger.info(f"Deleted FileReference {self.id}")
         except Exception as e:
-            logger.error(f"Failed to delete FileReference: {str(e)}", exc_info=True)
+            logger.error(f"Failed to delete FileReference {self.id} | Error: {str(e)}")
             raise
 
     def change_status(self, new_status):
         """
         Helper method to safely change upload status with validation
         """
-        try:
+         try:
             if self.upload_status == new_status:
-                logger.debug(f"Status unchanged for FileReference {self.id}")
+                logger.debug(f"Status unchanged for {self.id}")
                 return False
-
+                
             old_status = self.get_upload_status_display()
             self.upload_status = new_status
             self.save(update_fields=['upload_status'])
-
+            
             logger.info(
-                f"Changed status for FileReference {self.id} | "
+                f"Status changed for {self.id} | "
                 f"From: {old_status} → To: {self.get_upload_status_display()}"
             )
             return True
-
+            
         except Exception as e:
-            logger.error(
-                f"Status change failed for FileReference {self.id} | "
-                f"Error: {str(e)}",
-                exc_info=True
-            )
+            logger.error(f"Status change failed for {self.id} | Error: {str(e)}")
             raise
 
     def toggle_selection(self):
