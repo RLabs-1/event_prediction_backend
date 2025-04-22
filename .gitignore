@@ -44,3 +44,10 @@ secretKey.txt
 
 # Local settings
 log_prediction_backend/settings/local.py
+
+# Migrations
+core/migrations/*
+!core/migrations/__init__.py
+
+# Media
+log_prediction_backend/media
