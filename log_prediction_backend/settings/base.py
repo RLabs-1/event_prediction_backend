@@ -20,7 +20,11 @@ INSTALLED_APPS = [
     'core',
     'corsheaders',
     'django_celery_beat',
+
+    'django_prometheus',
+
     'storages',
+
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -34,6 +38,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

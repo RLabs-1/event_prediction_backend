@@ -19,6 +19,8 @@ from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,5 +29,6 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/', include('user_management.urls'),name='user-management'),
     path('api/', include('file_manager.urls'),name='file-manager'),
+    path('api/', include('django_prometheus.urls')),  # Exposes /metrics endpoint
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
