@@ -344,6 +344,13 @@ class UserSystemPermissions(models.Model):
         return f"{self.user.email} - {self.event_system.name} - {self.get_permission_level_display()}"
 
 
+class LogsPattern(models.Model):
+    id = models.AutoField(primary_key=True)
+    pattern = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.pattern
+
 class EventSystemConfiguration(models.Model):
     class Region(models.IntegerChoices):
         NA = 1, 'North America'
@@ -379,7 +386,12 @@ class EventSystemConfiguration(models.Model):
         default=Timezone.ASIA_JERUSALEM
     )
 
-    logs_pattern = models.CharField(max_length=255)
+    logs_pattern = models.ForeignKey(
+        LogsPattern,
+        on_delete=models.PROTECT,
+        related_name='event_configurations',
+        help_text="Select a logs pattern"
+    )
 
     def __str__(self):
         return f"Configuration for {self.event_system.name}"

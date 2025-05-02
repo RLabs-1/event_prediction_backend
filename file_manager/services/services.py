@@ -1,4 +1,4 @@
-from core.models import EventSystem, FileReference, UserSystemPermissions, EventSystemConfiguration
+from core.models import EventSystem, FileReference, UserSystemPermissions, EventSystemConfiguration, LogsPattern
 import os
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -230,13 +230,16 @@ class EventSystemService:
 
         event_system.users.add(user)
 
+        # Get or create the default logs pattern
+        default_logs_pattern, _ = LogsPattern.objects.get_or_create(pattern='default-log-pattern')
+
         # Create default configuration
         EventSystemConfiguration.objects.create(
             event_system=event_system,
             learning_time_minutes=60,
             region=EventSystemConfiguration.Region.ASIA,
             timezone=EventSystemConfiguration.Timezone.ASIA_JERUSALEM,
-            logs_pattern="default-pattern"
+            logs_pattern=default_logs_pattern
         )
 
         return event_system
