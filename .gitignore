@@ -5,6 +5,8 @@
 .env
 pyvenv.cfg
 /Scripts/
+
+
 #*/migrations
 /venv
 .venv
@@ -39,3 +41,13 @@ __pycache__
 staticfiles
 db.sqlite3
 secretKey.txt
+
+# Local settings
+log_prediction_backend/settings/local.py
+
+# Migrations
+core/migrations/*
+!core/migrations/__init__.py
+
+# Media
+log_prediction_backend/media

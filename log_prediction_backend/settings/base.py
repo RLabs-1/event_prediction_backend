@@ -18,6 +18,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'core',
+    'corsheaders',
+    'django_celery_beat',
+
+    'django_prometheus',
+
+    'storages',
+
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -30,7 +37,22 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL for Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
 
 ROOT_URLCONF = 'log_prediction_backend.urls'
 
@@ -102,3 +124,12 @@ AUTHENTICATION_BACKENDS = [
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# # S3 Storage settings
+# AWS_ACCESS_KEY_ID = "your-access-key"  # Replace with the actual key
+# AWS_SECRET_ACCESS_KEY = "your-secret-key"  # Replace with the actual secret
+# AWS_STORAGE_BUCKET_NAME = "your-bucket-name"  # Replace with the bucket name
+# AWS_S3_REGION_NAME = "your-region"  # Replace with the AWS region (e.g., 'us-west-2')
+# AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+#
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
