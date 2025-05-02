@@ -14,3 +14,4 @@ django-celery-beat
 django-prometheus
 boto3
 django-storages
+pip pytz
