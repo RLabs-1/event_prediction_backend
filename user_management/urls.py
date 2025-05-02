@@ -15,8 +15,8 @@ from .views.views import (
 
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema
+from user_management.views.credentials_views import AddCredentialsView ,  UpdateCredentialView, CredentialDeleteView,GetCredentialsView
 
-from user_management.views.credentials_views import AddCredentialsView,GetCredentialsView
 
 
 # Add schema for TokenRefreshView
@@ -47,6 +47,7 @@ urlpatterns = [
     path('user/verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     
     path('api/user/credentials/<int:credentialId>/', UpdateCredentialView.as_view(), name='update-credential'),
+    path('api/user/credentials/<int:credentialId>/delete/', CredentialDeleteView.as_view(), name='delete-credential'),
     path('create-credentials/', AddCredentialsView.as_view(), name='add-credentials'),
     path('Get-credentials/<int:credentialId>/', GetCredentialsView.as_view(), name='get-credentials'),
     path('api/user/credentials', AddCredentialsView.as_view(), name='add-credentials'),
