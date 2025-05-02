@@ -1,11 +1,20 @@
 # Database configurations
 from .base import *
+from loguru import logger
+import sys
+import os
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-   }
+
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'event_prediction_db',
+
+        'USER': 'postgres',
+        'PASSWORD': '147258magd',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 
@@ -49,26 +58,78 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
 }
 
-# Development Logging - More verbose
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
+# Logging configuration
+LOG_DIR = os.path.join(BASE_DIR, 'logs') 
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Remove default log handlers to avoid duplicates
+logger.remove()
+
+# Log format with more context
+LOG_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}"
+
+# Configure Loguru Handlers
+logger.configure(
+    handlers=[
+        # Debug Log (Logs all messages)
+        {
+            "sink": os.path.join(LOG_DIR, "debug.log"),
+            "level": "DEBUG",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
+            "diagnose": True,
         },
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'error.log'),
+        # Info Log
+        {
+            "sink": os.path.join(LOG_DIR, "info.log"),
+            "level": "INFO",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
         },
-    },
-    'loggers': {
-        'user_management': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
+        # Warning Log
+        {
+            "sink": os.path.join(LOG_DIR, "warning.log"),
+            "level": "WARNING",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
         },
-    },
-}
+        # Error Log
+        {
+            "sink": os.path.join(LOG_DIR, "error.log"),
+            "level": "ERROR",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
+            "diagnose": True,
+        },
+        # Critical Log
+        {
+            "sink": os.path.join(LOG_DIR, "critical.log"),
+            "level": "CRITICAL",
+            "rotation": "10 MB",
+            "retention": "7 days",
+            "format": LOG_FORMAT,
+            "enqueue": True,
+            "backtrace": True,
+            "diagnose": True,
+        },
+        # Console Output (for development)
+        {
+            "sink": sys.stderr,
+            "level": "DEBUG" if DEBUG else "INFO",
+            "format": "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>",
+            "colorize": True,
+            "enqueue": True,
+        },
+    ]
+)
