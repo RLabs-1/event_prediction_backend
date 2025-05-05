@@ -165,6 +165,7 @@ class FileReference(models.Model):
         S3 = 2, 'S3'
         GOOGLE_DRIVE = 3, 'Google Drive'
         LOCAL = 4, 'Local Storage'
+        SCP = 5, 'SCP'
 
     storage_provider = models.IntegerField(
         choices=StorageProvider.choices,
