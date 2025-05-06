@@ -5,11 +5,13 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+from loguru import logger
+import paramiko
 
 class EventSystemFileService:
     @staticmethod
     def upload_file(file, event_system_id, user, storage_provider):
-        """Save file to local storage or s3 and create a FileReference entry."""
+        """Save file to local storage or s3 or scp and create a FileReference entry."""
 
         event_system = EventSystem.objects.get(id=event_system_id)
 
@@ -36,6 +38,10 @@ class EventSystemFileService:
         if storage_provider == FileReference.StorageProvider.S3:
             # Upload to S3
             file_url = EventSystemFileService.upload_to_s3(file, file.name)
+
+        elif storage_provider == FileReference.StorageProvider.SCP:
+            # SCP upload
+            file_url = EventSystemFileService.upload_to_scp(file, file.name)
 
         else:
             # Upload to local storage
@@ -78,6 +84,41 @@ class EventSystemFileService:
             raise ValueError("AWS credentials are incomplete.")
         except Exception as e:
             raise ValueError(f"Error uploading file to S3: {str(e)}")
+
+    @staticmethod
+    def upload_to_scp(file, file_name):
+        """Upload file to a remote server via SCP and return the file URL."""
+        try:
+            # SCP configuration
+            scp_host = settings.SCP_HOST
+            scp_port = settings.SCP_PORT
+            scp_user = settings.SCP_USER
+            scp_password = settings.SCP_PASSWORD
+            scp_remote_path = settings.SCP_REMOTE_PATH
+
+            # Create an SSH client
+            ssh_client = paramiko.SSHClient()
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_client.connect(scp_host, port=scp_port, username=scp_user, password=scp_password)
+
+            # Upload file using SCP
+            scp = paramiko.SFTPClient.from_transport(ssh_client.get_transport())
+            remote_file_path = os.path.join(scp_remote_path, file_name)
+
+            # Save the file to the remote server
+            with scp.open(remote_file_path, 'wb') as remote_file:
+                remote_file.write(file.read())
+            scp.close()
+
+            # Close the SSH connection
+            ssh_client.close()
+
+            # Construct the URL (or return the remote path as URL)
+            file_url = f"scp://{scp_host}/{remote_file_path}"
+            return file_url
+
+        except Exception as e:
+            raise ValueError(f"Error uploading file to SCP: {str(e)}")
 
     @staticmethod
     def delete_file(event_system_id, file_id, user):
