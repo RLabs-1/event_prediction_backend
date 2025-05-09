@@ -167,6 +167,7 @@ class FileReference(models.Model):
         S3 = 2, 'S3'
         GOOGLE_DRIVE = 3, 'Google Drive'
         LOCAL = 4, 'Local Storage'
+        SCP = 5, 'SCP'
 
     storage_provider = models.IntegerField(
         choices=StorageProvider.choices,
@@ -379,3 +380,55 @@ class UserProfile(models.Model):
     
     
 
+
+class LogsPattern(models.Model):
+    id = models.AutoField(primary_key=True)
+    pattern = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.pattern
+
+class EventSystemConfiguration(models.Model):
+    class Region(models.IntegerChoices):
+        NA = 1, 'North America'
+        EU = 2, 'Europe'
+        ASIA = 3, 'Asia'
+        AFRICA = 4, 'Africa'
+        LATAM = 5, 'Latin America'
+        OCEANIA = 6, 'Oceania'
+
+    class Timezone(models.IntegerChoices):
+        UTC = 1, 'UTC'
+        ASIA_JERUSALEM = 2, 'Asia/Jerusalem'
+        EUROPE_LONDON = 3, 'Europe/London'
+        AMERICA_NEW_YORK = 4, 'America/New_York'
+
+    event_system = models.OneToOneField(
+        'EventSystem',
+        on_delete=models.CASCADE,
+        related_name='configuration'
+    )
+
+    learning_time_minutes = models.PositiveIntegerField(
+        help_text="Learning time in minutes."
+    )
+
+    region = models.IntegerField(
+        choices=Region.choices,
+        default=Region.ASIA
+    )
+
+    timezone = models.IntegerField(
+        choices=Timezone.choices,
+        default=Timezone.ASIA_JERUSALEM
+    )
+
+    logs_pattern = models.ForeignKey(
+        LogsPattern,
+        on_delete=models.PROTECT,
+        related_name='event_configurations',
+        help_text="Select a logs pattern"
+    )
+
+    def __str__(self):
+        return f"Configuration for {self.event_system.name}"

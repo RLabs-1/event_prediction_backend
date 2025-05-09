@@ -134,3 +134,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 #
 # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+
+# # SCP Storage settings
+# SCP_HOST = 'example.com'  # Replace with SCP server's hostname or IP address
+# SCP_PORT = 22  # Default SCP port
+# SCP_USER = 'your_username'  # Replace with SCP username
+# SCP_PASSWORD = 'your_password'  # Replace with SCP password (or use SSH key authentication)
+# SCP_REMOTE_PATH = '/path/to/remote/directory'  # The directory we want to store the files
