@@ -10,6 +10,8 @@ from user_management.exceptions.custom_exceptions import (
 )
 from core.model.credentials_model import Credentials
 
+import pytz
+
 class UserManager(BaseUserManager):
     """ Manager for the Users in the system"""
 
@@ -343,6 +345,40 @@ class UserSystemPermissions(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.event_system.name} - {self.get_permission_level_display()}"
+    
+
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    language_preference = models.CharField(max_length=10, choices=[
+        ('en', 'English'),
+        ('he', 'Hebrew'),
+        ('ar', 'Arabic'),
+    ], default='en')
+    
+    # Use a tuple of tuples for time zone choices
+    timezone_preference = models.CharField(
+        max_length=50,
+        choices=[(tz, tz) for tz in pytz.all_timezones],  # Populate choices with valid time zones
+        default='UTC'
+    )
+    
+    theme_settings = models.CharField(max_length=20, choices=[
+        ('light', 'Light'),
+        ('dark', 'Dark'),
+        ('system', 'System Default'),
+    ], default='light')
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+    
+
+    def get_valid_timezones():
+        
+        return pytz.all_timezones
+    
+    
 
 
 class LogsPattern(models.Model):
