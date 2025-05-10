@@ -95,9 +95,16 @@ class UserService:
         and hasn't expired
         """
         try:
-            user = User.objects.get(email=email)
-            stored_code = user.verification_code
-            code_timestamp = user.token_time_to_live
+            
+            userVerify = EmailVerification.objects.get(
+                email=email
+            )
+            if(userVerify is None):
+                 userVerify = EmailVerification.objects.create(
+                email=email
+            )
+            stored_code = userVerify.verification_code
+            code_timestamp = userVerify.token_time_to_live
 
             # Check if code exists and matches
             if not stored_code or stored_code != verification_code:
@@ -131,9 +138,16 @@ class UserService:
             user = User.objects.get(email=email)
             user.set_password(new_password)
             # Clear the verification code after successful reset
-            user.verification_code = None
-            user.token_time_to_live = None
-            user.save()
+            userVerify = EmailVerification.objects.get(
+                email=email
+            )
+            if(userVerify is None):
+                 userVerify = EmailVerification.objects.create(
+                email=email
+            )
+            userVerify.verification_code = None
+            userVerify.token_time_to_live = None
+            userVerify.save()
             
             return {
                 "message": "Password reset successfully"
@@ -145,8 +159,6 @@ class UserService:
     @staticmethod
     def initiate_password_reset(email):
         try:
-            # Find user
-            user = User.objects.get(email=email)
             
             # Generate verification code
             verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
@@ -154,14 +166,20 @@ class UserService:
             # Log the code (for debugging)
             print(f"Generated code for {email}: {verification_code}")
             
-            # Save verification code and set expiry
-            user.verification_code = verification_code
-            user.token_time_to_live = timezone.now()
-            user.save()
+
             
-            # Log stored code (for debugging)
-            stored_user = User.objects.get(email=email)
-            print(f"Stored code in DB: {stored_user.verification_code}")
+            # Save verification code and set expiry
+            userVerify = EmailVerification.objects.get(
+                email=email
+            )
+            if(userVerify is None):
+                 userVerify = EmailVerification.objects.create(
+                email=email
+            )
+
+            userVerify.verification_code = verification_code
+            userVerify.token_time_to_live = timezone.now()
+            userVerify.save()
             
             # Send email with verification code
             EmailService.send_password_reset_email(
