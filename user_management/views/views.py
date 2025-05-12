@@ -386,6 +386,11 @@ class ResetForgotPasswordView(APIView):
             confirm_password = request.data.get('confirm_password')
 
             logger.debug(f"Password reset attempt for user: {email}")
+            
+            userVerify = EmailVerification.objects.get(
+                email=email
+            )
+            
 
             # Validate all fields are present
             if not all([email, verification_code, new_password, confirm_password]):
@@ -412,14 +417,14 @@ class ResetForgotPasswordView(APIView):
                     }, status=status.HTTP_403_FORBIDDEN)
 
                 # Verify the code
-                if not user.verification_code or user.verification_code != verification_code:
+                if not userVerify.verification_code or userVerify.verification_code != verification_code:
                     logger.warning(f"Invalid verification code used for password reset: {email}")
                     return Response({
                         'error': 'Invalid verification code'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 # Check if code is expired
-                if user.is_token_expired():
+                if userVerify.is_token_expired():
                     logger.warning(f"Expired verification code used for password reset: {email}")
                     return Response({
                         'error': 'Verification code has expired'
@@ -427,10 +432,11 @@ class ResetForgotPasswordView(APIView):
 
                 # Reset password
                 user.set_password(new_password)
-                user.verification_code = None  # Clear the verification code
-                user.token_time_to_live = None  # Clear the expiry
+                userVerify.verification_code = None  # Clear the verification code
+                userVerify.token_time_to_live = None  # Clear the expiry
                 user.is_password_reset_pending = False
                 user.save()
+                userVerify.save()
 
                 logger.info(f"Successfully reset password for user: {email}")
                 return Response({
