@@ -432,3 +432,16 @@ class EventSystemConfiguration(models.Model):
 
     def __str__(self):
         return f"Configuration for {self.event_system.name}"
+
+class UserFcmToken(models.Model):
+    """ Model for storing Firebase Cloud Messaging (FCM) tokens associated with a user """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    fcm_token = models.CharField(max_length=128)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='fcm_tokens')
+    session_id = models.CharField(max_length=38)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user_id} - {self.session_id}"
