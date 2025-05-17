@@ -9,6 +9,7 @@ from .views.views import (
     FileReferenceView,
     FileSelectView,
     EventSystemFileListView,
+    LogPatternsView,
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path('eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>/select', FileSelectView.as_view(), name='select-file'),
     path('eventSystem/<uuid:eventSystemId>/files/<uuid:fileId>/', FileReferenceView.as_view(), name='file-delete-get-updatename'),
     path('eventSystem/<uuid:eventSystemId>/files/', EventSystemFileListView.as_view(), name='list-event-system-files'),
+    path('api/events/log-patterns', LogPatternsView.as_view(), name='log-patterns'),
 
 
 ]
