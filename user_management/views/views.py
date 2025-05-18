@@ -282,6 +282,7 @@ class UserLoginView(APIView):
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class ForgotPasswordView(APIView):
     @extend_schema(
         tags=['User Management'],
@@ -296,41 +297,30 @@ class ForgotPasswordView(APIView):
             }
         },
         responses={
-            200: {'description': 'Password reset initiated successfully'},
-            400: {'description': 'Email is required or invalid'},
-            404: {'description': 'User not found'}
+            204: {'description': 'Password reset request received. If the email exists, further instructions will be sent.'}
         }
     )
     def post(self, request):
+        email = request.data.get('email')
+        logger.debug(f"Password reset request for: {email}")
+
+        if not email:
+            logger.warning("Password reset attempt without email")
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         try:
-            email = request.data.get('email')
-            logger.debug(f"Password reset request for: {email}")
+            user = User.objects.get(email=email)
+            if user.is_deleted:
+                logger.warning(f"Password reset attempted for deleted account: {email}")
+                return Response(status=status.HTTP_204_NO_CONTENT)
 
-            if not email:
-                logger.warning("Password reset attempt without email")
-                return Response({
-                    "error": "Email is required"
-                }, status=status.HTTP_400_BAD_REQUEST)
+            service_response = UserService.initiate_password_reset(email)
+            logger.info(f"Password reset email sent to: {email}")
 
-            try:
-                user = User.objects.get(email=email)
-                if user.is_deleted:
-                    logger.warning(f"Password reset attempted for deleted account: {email}")
-                    return Response({
-                        "error": "This account has been deleted."
-                    }, status=status.HTTP_403_FORBIDDEN)
-                
-                service_response = UserService.initiate_password_reset(email)
-                logger.info(f"Password reset email sent to: {email}")
-                return Response(service_response, status=status.HTTP_200_OK)
-            except ValueError as ve:
-                logger.warning(f"Invalid password reset attempt for {email}: {str(ve)}")
-                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.exception(f"Error in password reset process for {email}")
-            return Response({
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(
