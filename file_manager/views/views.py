@@ -7,9 +7,9 @@ import os
 from rest_framework.permissions import IsAuthenticated
 from loguru import logger  # Use loguru instead of standard logging
 
-from core.models import EventSystem, FileReference, UserSystemPermissions
+from core.models import EventSystem, FileReference, UserSystemPermissions, LogsPattern
 from file_manager.services.services import EventSystemService, EventSystemFileService
-from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, FileReferenceSerializer, EventSystemCreateSerializer
+from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, FileReferenceSerializer, EventSystemCreateSerializer, CustomPatternSerializer
 
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter, OpenApiTypes
 from django.http import FileResponse
@@ -745,3 +745,25 @@ class EventSystemFileListView(APIView):
                 {"error": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class LogPatternsView(APIView):
+    def get(self, request):
+        patterns = LogsPattern.objects.all()
+
+        # Create a dictionary with ID as key and pattern as value
+        pattern_map = {pattern.id: pattern.pattern for pattern in patterns}
+
+        return Response(pattern_map, status=status.HTTP_200_OK)
+    
+
+class AddCustomPatternView(APIView):
+    def post(self, request):
+        serializer = CustomPatternSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
+
