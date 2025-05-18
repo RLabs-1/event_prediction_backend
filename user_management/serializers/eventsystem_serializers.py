@@ -1,23 +1,3 @@
-    # from rest_framework import serializers
-    # from core.models import EventSystemConfiguration
-    #
-    # class EventSystemConfigurationSerializer(serializers.ModelSerializer):
-    #     class Meta:
-    #         model = EventSystemConfiguration
-    #         fields = [
-    #             'id',
-    #             'event_system',
-    #             'learning_time_minutes',
-    #             'region',
-    #             'timezone',
-    #             'logs_pattern',
-    #         ]
-    #         read_only_fields = ['id', 'event_system']
-
-
-
-# user_management/serializers/eventsystem_serializers.py
-
 from rest_framework import serializers
 from core.models import EventSystem, FileReference, User  # Adjust imports if User is custom or from another app
 
