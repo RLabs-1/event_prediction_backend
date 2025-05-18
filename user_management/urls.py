@@ -48,5 +48,5 @@ urlpatterns = [
     path('create-credentials/', AddCredentialsView.as_view(), name='add-credentials'),
     path('Get-credentials/<int:credentialId>/', GetCredentialsView.as_view(), name='get-credentials'),
     path('api/user/credentials', AddCredentialsView.as_view(), name='add-credentials'),
-    path('eventsystem/<uuid:id>/configuration', EventSystemConfigurationPatchView.as_view(), name='patch-eventsystem-configuration'),
+    path('eventsystem/<uuid:id>/configuration', EventSystemConfigurationPatchView.as_view(), name='patch-eventsystem-configuration'), 
 ]
