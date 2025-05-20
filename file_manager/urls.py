@@ -26,7 +26,7 @@ urlpatterns = [
     path('eventSystem/<uuid:eventSystemId>/files/', EventSystemFileListView.as_view(), name='list-event-system-files'),
     path('api/events/log-patterns', LogPatternsView.as_view(), name='log-patterns'),
     path('api/events/eventSystem/<uuid:eventSystemId>/log-pattern', AddCustomPatternView.as_view(), name='set-custom-pattern'),
-    path("api/eventsystem/<uuid:eventSystemId>/configuration", PatchLogsPatternView.as_view(), name="patch_logs_pattern"),
+    path("eventsystem/<uuid:eventSystemId>/configuration", PatchLogsPatternView.as_view(), name="patch_logs_pattern"),
 
 
 ]
