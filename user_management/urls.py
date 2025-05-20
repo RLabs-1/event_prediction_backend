@@ -14,7 +14,6 @@ from .views.views import (
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema
 from user_management.views.credentials_views import AddCredentialsView ,  UpdateCredentialView, CredentialDeleteView,GetCredentialsView
-from user_management.views.eventsystem_views import EventSystemConfigurationPatchView
 from user_management.views.fcm_views import RegisterFcmTokenView
 
 # Add schema for TokenRefreshView
@@ -48,7 +47,6 @@ urlpatterns = [
     path('create-credentials/', AddCredentialsView.as_view(), name='add-credentials'),
     path('Get-credentials/<int:credentialId>/', GetCredentialsView.as_view(), name='get-credentials'),
     path('api/user/credentials', AddCredentialsView.as_view(), name='add-credentials'),
-    path('eventsystem/<uuid:id>/configuration', EventSystemConfigurationPatchView.as_view(), name='patch-eventsystem-configuration'),
     path('api/fcm/register-token', RegisterFcmTokenView.as_view(), name='register-fcm-token'),
 ]
 
