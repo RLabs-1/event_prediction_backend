@@ -21,6 +21,8 @@ DATABASES = {
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'temp-event-analyzer-fe6caee7f8ac.herokuapp.com']
 
+# Firebase Cloud
+FCM_SERVER_KEY = 'dummy_firebase_key'
 
 SECRET_KEY = 'django-insecure-(7v(oyc&1ixz5onr=$3gg8idp)!3^toob!#i7#%2t6*ts=wv'
 
