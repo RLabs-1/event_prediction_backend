@@ -6,3 +6,4 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['language_preference', 'timezone_preference', 'theme_settings']
 
+

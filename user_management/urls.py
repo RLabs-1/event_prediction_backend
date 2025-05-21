@@ -18,7 +18,6 @@ from drf_spectacular.utils import extend_schema
 from user_management.views.credentials_views import AddCredentialsView ,  UpdateCredentialView, CredentialDeleteView,GetCredentialsView
 
 
-
 # Add schema for TokenRefreshView
 @extend_schema(
     tags=['Authentication'],
