@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/', include('user_management.urls'),name='user-management'),
     path('api/', include('file_manager.urls'),name='file-manager'),
+    path('api/', include('message_queue.urls'),name='message-queue'),
     path('api/', include('django_prometheus.urls')),  # Exposes /metrics endpoint
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
