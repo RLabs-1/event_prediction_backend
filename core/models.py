@@ -442,6 +442,7 @@ class UserFcmToken(models.Model):
     session_id = models.CharField(max_length=38)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_used = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user_id} - {self.session_id}"
