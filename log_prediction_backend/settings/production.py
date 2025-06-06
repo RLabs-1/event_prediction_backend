@@ -59,6 +59,12 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
+
+# Firebase configuration
+
+#####  This needs to be changed to the actual firebase credentials
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'path/to/secure/firebase-credentials.json')
+
 # Production JWT Settings - More strict
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Shorter for production
