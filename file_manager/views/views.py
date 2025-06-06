@@ -7,7 +7,7 @@ import os
 from rest_framework.permissions import IsAuthenticated
 from loguru import logger  # Use loguru instead of standard logging
 
-from core.models import EventSystem, FileReference, UserSystemPermissions, LogsPattern
+from core.models import EventSystem, FileReference, UserSystemPermissions, LogsPattern, EventSystemConfiguration
 from file_manager.services.services import EventSystemService, EventSystemFileService
 from file_manager.serializers.serializers import EventSystemNameUpdateSerializer, FileReferenceSerializer, EventSystemCreateSerializer, CustomPatternSerializer
 
@@ -163,8 +163,6 @@ class EventSystemNameUpdateView(APIView):
         except Exception as e:
             logger.exception("Unexpected error while updating event system name")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        
 
 class ActivateEventSystemView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -754,7 +752,6 @@ class LogPatternsView(APIView):
         pattern_map = {pattern.id: pattern.pattern for pattern in patterns}
 
         return Response(pattern_map, status=status.HTTP_200_OK)
-    
 
 class AddCustomPatternView(APIView):
     def post(self, request):
@@ -764,6 +761,72 @@ class AddCustomPatternView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PatchLogsPatternView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=["file manager"],
+        description="Update the logs pattern for an EventSystemConfiguration by EventSystem ID and logpattern ID.",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "logpattern ID": {
+                        "type": "integer",
+                        "description": "ID of the LogsPattern to assign to the EventSystemConfiguration"
+                    }
+                },
+                "required": ["id"]
+            }
+        },
+        responses={
+            204: {"description": "Logs pattern updated successfully. No content returned."},
+            400: {"description": "Bad request, e.g., missing 'logpattern ID' or attempting to assign the same LogsPattern."},
+            401: {"description": "Authentication required"},
+            403: {"description": "Permission denied"},
+            404: {"description": "EventSystem, EventSystemConfiguration, or LogsPattern not found"},
+            500: {"description": "Unexpected server error"}
+        }
+    )
+
+    def patch(self, request, eventSystemId):
+        try:
+            logger.debug(f"Patch request received for EventSystem ID: {eventSystemId} with payload: {request.data}")
+            event_system = EventSystem.objects.get(id=eventSystemId)
+            configuration = EventSystemConfiguration.objects.get(event_system=event_system)
+
+            pattern_id = request.data.get("logpattern ID")
+            if not pattern_id:
+                raise ValueError("Pattern ID is required.")
+
+            pattern = LogsPattern.objects.get(id=pattern_id)
+            if configuration.logs_pattern_id == pattern.id:
+                raise ValueError("The same LogsPattern is already assigned.")
+
+            configuration.logs_pattern = pattern
+            configuration.save()
+
+            logger.info(f"Logs pattern updated to ID {pattern_id} for EventSystem {eventSystemId}")
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+        except ValueError as e:
+            logger.warning(f"ValueError: {str(e)}")
+            return Response({f"Value error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except EventSystem.DoesNotExist:
+            logger.error(f"EventSystem {eventSystemId} not found.")
+            return Response({"error": "Event system not found"}, status=status.HTTP_404_NOT_FOUND)
+        except EventSystemConfiguration.DoesNotExist:
+            logger.error(f"Event System Configuration {eventSystemId} not found.")
+            return Response({"error": "Event System Configuration not found"}, status=status.HTTP_404_NOT_FOUND)
+        except LogsPattern.DoesNotExist:
+            logger.error(f"LogsPattern with ID {pattern_id} not found.")
+            return Response({"error": "The ID of LogsPattern not found"}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionError as e:
+            logger.warning(f"Permission denied: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            logger.exception("Unexpected error occurred during logs pattern patch.")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
