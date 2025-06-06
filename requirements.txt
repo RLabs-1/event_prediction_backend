@@ -21,3 +21,4 @@ paramiko
 scp
 loguru
 
+firebase-admin
