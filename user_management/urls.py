@@ -12,7 +12,7 @@ from .views.views import (
 
 )
 
-
+from core.views import UserProfilePatchView
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema
 from user_management.views.credentials_views import AddCredentialsView ,  UpdateCredentialView, CredentialDeleteView,GetCredentialsView
@@ -51,4 +51,5 @@ urlpatterns = [
     path('create-credentials/', AddCredentialsView.as_view(), name='add-credentials'),
     path('Get-credentials/<int:credentialId>/', GetCredentialsView.as_view(), name='get-credentials'),
     path('api/user/credentials', AddCredentialsView.as_view(), name='add-credentials'),
+    path('user/<uuid:userId>/profile', UserProfilePatchView.as_view(), name='user-profile-patch'),
 ]
