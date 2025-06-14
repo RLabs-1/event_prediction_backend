@@ -3,6 +3,7 @@ from django.db import models
 from datetime import timedelta
 from django.utils import timezone
 import uuid
+
 from user_management.exceptions.custom_exceptions import (
     UserValidationError,
     UserStateError,

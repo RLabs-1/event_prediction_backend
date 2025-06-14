@@ -16,7 +16,9 @@ from user_management.exceptions.custom_exceptions import (
 from rest_framework_simplejwt.exceptions import TokenError
 from drf_spectacular.types import OpenApiTypes
 from django.utils import timezone
-
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import AccessToken
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import AuthenticationFailed
@@ -484,27 +486,32 @@ class CurrentUserView(APIView):
         }
     )
     def get(self, request):
-        try:
-            logger.debug(f"Current user info request for: {request.user.email}")
-            user = request.user
-            
-            if user.is_deleted:
-                logger.warning(f"Deleted user attempted to access profile: {user.email}")
-                return Response({
-                    "error": "This account has been deleted."
-                }, status=status.HTTP_403_FORBIDDEN)
-            
-            return Response({
-                'id': user.id,
-                'email': user.email,
-                'name': user.name,
-                'last_login': user.last_login
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.exception(f"Error retrieving user info for {request.user.email}")
-            return Response({
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+try:
+    logger.debug(f"Current user info request for: {request.user.email}")
+    user = request.user
+    
+    if user.is_deleted:
+        logger.warning(f"Deleted user attempted to access profile: {user.email}")
+        return Response({
+            "error": "This account has been deleted."
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    return Response({
+        'id': user.id,
+        'email': user.email,
+        'uuid': str(user.id),  # Use user.id (UUID) as the UUID
+        'name': user.name,
+        'is_verified': user.is_verified,
+        'is_active': user.is_active,
+        'last_login': user.last_login
+    }, status=status.HTTP_200_OK)
+
+except Exception as e:
+    logger.exception(f"Error retrieving user info for {request.user.email}")
+    return Response({
+        "error": str(e)
+    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class CustomTokenRefreshView(APIView):
     permission_classes = [IsAuthenticated]
