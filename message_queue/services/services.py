@@ -1,6 +1,7 @@
 import requests
 import logging
-
+from core.models import UserFcmToken
+from django.utils.timezone import now
 
 class FCMService:
     """
@@ -52,3 +53,19 @@ class FCMService:
         except requests.RequestException as e:
             logging.error(f"FCM send failed: {e}")
             return {'error': str(e)}
+
+    def register_token(self, user, token: str, session_id: str = None) -> UserFcmToken:
+
+        obj, created = UserFcmToken.objects.update_or_create(
+            user=user,
+            fcm_token=token,
+            defaults={
+                'session_id': session_id or '',
+                'updated_at': now(),
+            }
+        )
+        if created:
+            print("New token registered.")
+        else:
+            print("Existing token updated.")
+        return obj
