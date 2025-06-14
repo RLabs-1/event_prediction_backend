@@ -8,7 +8,7 @@ DATABASES = {
     'default': {
 
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'event_prediction_db11',
+        'NAME': 'event_prediction_db',
 
         'USER': 'postgres',
         'PASSWORD': 'adankh313',
