@@ -1,3 +1,4 @@
+
 from django.urls import path
 from .views.views import (
     RegistrationView,
@@ -45,5 +46,5 @@ urlpatterns = [
     path('create-credentials/', AddCredentialsView.as_view(), name='add-credentials'),
     path('Get-credentials/<int:credentialId>/', GetCredentialsView.as_view(), name='get-credentials'),
     path('api/user/credentials', AddCredentialsView.as_view(), name='add-credentials'),
-    path('api/eventSystem/<int:eventSystemId>/configuration/<int:configurationId>/', EventSystemConfigurationPatchView.as_view(), name='patch_event_system_configuration'), #EventSystemConfigurationPatchView
+    path('api/eventSystem/<int:eventSystemId>/configuration/<int:configurationId>/', EventSystemConfigurationPatchView.as_view(), name='patch_event_system_configuration'),
 ]

@@ -15,7 +15,6 @@ class EventSystemConfigurationPatchSerializer(serializers.ModelSerializer):
         }
 
     def validate_learning_time_minutes(self, value):
-        # Checking the learning_time_minutes to be positive
         if value <= 0:
             raise serializers.ValidationError("Learning time must be positive")
         return value

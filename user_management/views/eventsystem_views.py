@@ -7,7 +7,7 @@ from user_management.serializers.eventsystem_serializers import EventSystemConfi
 
 class EventSystemConfigurationPatchView(APIView):
     serializer_class = EventSystemConfigurationPatchSerializer
-    
+
     def patch(self, request, eventSystemId, configurationId):
         config = EventSystemConfiguration.objects.filter(
             id=configurationId,
@@ -24,7 +24,7 @@ class EventSystemConfigurationPatchView(APIView):
             config, data=request.data, partial=True
         )
 
-        if serializer.is_valid(): #if valid save it
+        if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
