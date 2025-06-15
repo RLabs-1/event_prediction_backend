@@ -24,7 +24,7 @@ class EventSystemConfigurationPatchView(APIView):
             config, data=request.data, partial=True
         )
 
-        if serializer.is_valid():
+        if serializer.is_valid(): #if valid save it
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
