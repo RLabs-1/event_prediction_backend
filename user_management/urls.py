@@ -8,16 +8,11 @@ from .views.views import (
     ForgotPasswordView,
     CurrentUserView,
     VerifyEmailView,
-
-
 )
-
-
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema
 from user_management.views.credentials_views import AddCredentialsView ,  UpdateCredentialView, CredentialDeleteView,GetCredentialsView
-
-
+from user_management.views.eventsystem_views import EventSystemConfigurationPatchView
 
 # Add schema for TokenRefreshView
 @extend_schema(
@@ -45,10 +40,10 @@ urlpatterns = [
     path('user/refresh-token/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('user/current/', CurrentUserView.as_view(), name='current-user'),
     path('user/verify-email/', VerifyEmailView.as_view(), name='verify-email'),
-    
     path('api/user/credentials/<int:credentialId>/', UpdateCredentialView.as_view(), name='update-credential'),
     path('api/user/credentials/<int:credentialId>/delete/', CredentialDeleteView.as_view(), name='delete-credential'),
     path('create-credentials/', AddCredentialsView.as_view(), name='add-credentials'),
     path('Get-credentials/<int:credentialId>/', GetCredentialsView.as_view(), name='get-credentials'),
     path('api/user/credentials', AddCredentialsView.as_view(), name='add-credentials'),
+    path('api/eventSystem/<int:eventSystemId>/configuration/<int:configurationId>/', EventSystemConfigurationPatchView.as_view(), name='patch_event_system_configuration'),
 ]
