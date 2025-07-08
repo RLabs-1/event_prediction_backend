@@ -356,14 +356,14 @@ class UserProfile(models.Model):
         ('he', 'Hebrew'),
         ('ar', 'Arabic'),
     ], default='en')
-    
+
     # Use a tuple of tuples for time zone choices
     timezone_preference = models.CharField(
         max_length=50,
         choices=[(tz, tz) for tz in pytz.all_timezones],  # Populate choices with valid time zones
         default='UTC'
     )
-    
+
     theme_settings = models.CharField(max_length=20, choices=[
         ('light', 'Light'),
         ('dark', 'Dark'),
@@ -372,9 +372,9 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
-    
 
-    def get_valid_timezones():
+
+    def get_valid_timezones(self):
         
         return pytz.all_timezones
     
