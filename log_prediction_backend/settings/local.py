@@ -74,11 +74,12 @@ logger.configure(
     handlers=[
         # Debug Log (Logs all messages)
         {
-            "sink": os.path.join(LOG_DIR, "debug.log"),
+            "sink": os.path.join(LOG_DIR, "file_reference.log"),
             "level": "DEBUG",
             "rotation": "10 MB",
             "retention": "7 days",
             "format": LOG_FORMAT,
+            "filter": lambda record: "FileReference" in record["message"],
             "enqueue": True,
             "backtrace": True,
             "diagnose": True,
